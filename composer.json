@@ -1,0 +1,24 @@
+{
+    "name": "lispa/amos-comments",
+    "description": "Comments for contents - plugin",
+    "keywords": ["amos", "yii2", "comments"],
+    "type": "plugin",
+    "proscription": "BSD-3-Clause",
+    "require": {
+        "php": ">=5.4.0",
+        "lispa/amos-core" : "*",
+        "lispa/amos-admin" : "*",
+        "lispa/amos-attachments" : "*"
+    },
+    "extra": {
+        "asset-installer-paths": {
+            "npm-asset-library": "vendor/npm",
+            "bower-asset-library": "vendor/bower"
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "lispa\\amos\\comments\\": "src"
+        }
+    }
+}
