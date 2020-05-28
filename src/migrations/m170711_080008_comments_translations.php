@@ -1,15 +1,15 @@
 <?php
 
 /**
- * Lombardia Informatica S.p.A.
+ * Aria S.p.A.
  * OPEN 2.0
  *
  *
- * @package    lispa\amos\comments\migrations
+ * @package    open20\amos\comments\migrations
  * @category   CategoryName
  */
 
-use lispa\amos\core\migration\AmosMigrationTranslations;
+use open20\amos\core\migration\AmosMigrationTranslations;
 
 /**
  * Class m170711_080008_comments_translations
@@ -89,6 +89,10 @@ class m170711_080008_comments_translations extends AmosMigrationTranslations
                 ['category' => 'amoscomments' , 'source' => 'ID' , 'language' => 'it-IT' , 'translation' => 'ID'],
                 ['category' => 'amoscomments' , 'source' => 'Last comments' , 'language' => 'en-GB' , 'translation' => 'Last comments'],
                 ['category' => 'amoscomments' , 'source' => 'Last comments' , 'language' => 'it-IT' , 'translation' => 'Ultimi commenti'],
+
+                ['category' => 'amoscomments' , 'source' => 'Messages staff' , 'language' => 'en-GB' , 'translation' => 'Staff/Operator messages'],
+                ['category' => 'amoscomments' , 'source' => 'Messages staff' , 'language' => 'it-IT' , 'translation' => 'Messaggi Staff/Operatore'],
+
                 ['category' => 'amoscomments' , 'source' => 'Loading' , 'language' => 'en-GB' , 'translation' => 'Loading'],
                 ['category' => 'amoscomments' , 'source' => 'Loading' , 'language' => 'it-IT' , 'translation' => 'Caricamento'],
                 ['category' => 'amoscomments' , 'source' => 'Profile image' , 'language' => 'en-GB' , 'translation' => 'Profile image'],

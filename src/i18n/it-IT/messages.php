@@ -1,11 +1,11 @@
 <?php
 
 /**
- * Lombardia Informatica S.p.A.
+ * Aria S.p.A.
  * OPEN 2.0
  *
  *
- * @package    lispa\amos\comments\i18n\it-IT
+ * @package    open20\amos\comments\i18n\it-IT
  * @category   CategoryName
  */
 
@@ -54,6 +54,7 @@ return [
     'General' => 'Generale',
     'ID' => 'ID',
     'Last comments' => 'Ultimi commenti',
+    'Messages staff' => 'Messaggi Staff/Operatore',
     'Loading' => 'Caricamento',
     '#notification_email_subject' => 'Nuovo commento al contenuto {0}: {1}',
     'Profile image' => 'Immagine profilo',

@@ -1,21 +1,21 @@
 <?php
 
 /**
- * Lombardia Informatica S.p.A.
+ * Aria S.p.A.
  * OPEN 2.0
  *
  *
- * @package    lispa\amos\comments\migrations
+ * @package    open20\amos\comments\migrations
  * @category   CategoryName
  */
 
-use lispa\amos\comments\rules\DeleteOwnCommentReplyRule;
-use lispa\amos\comments\rules\DeleteOwnCommentRule;
-use lispa\amos\comments\rules\DeleteOwnContentCommentsRule;
-use lispa\amos\comments\rules\UpdateOwnCommentReplyRule;
-use lispa\amos\comments\rules\UpdateOwnCommentRule;
-use lispa\amos\comments\rules\UpdateOwnContentCommentsRule;
-use lispa\amos\core\migration\AmosMigrationPermissions;
+use open20\amos\comments\rules\DeleteOwnCommentReplyRule;
+use open20\amos\comments\rules\DeleteOwnCommentRule;
+use open20\amos\comments\rules\DeleteOwnContentCommentsRule;
+use open20\amos\comments\rules\UpdateOwnCommentReplyRule;
+use open20\amos\comments\rules\UpdateOwnCommentRule;
+use open20\amos\comments\rules\UpdateOwnContentCommentsRule;
+use open20\amos\core\migration\AmosMigrationPermissions;
 use yii\helpers\ArrayHelper;
 use yii\rbac\Permission;
 

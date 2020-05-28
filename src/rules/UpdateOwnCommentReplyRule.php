@@ -1,21 +1,21 @@
 <?php
 
 /**
- * Lombardia Informatica S.p.A.
+ * Aria S.p.A.
  * OPEN 2.0
  *
  *
- * @package    lispa\amos\comments\rules
+ * @package    open20\amos\comments\rules
  * @category   CategoryName
  */
 
-namespace lispa\amos\comments\rules;
+namespace open20\amos\comments\rules;
 
-use lispa\amos\core\rules\DefaultOwnContentRule;
+use open20\amos\core\rules\DefaultOwnContentRule;
 
 /**
  * Class UpdateOwnCommentReplyRule
- * @package lispa\amos\comments\rules
+ * @package open20\amos\comments\rules
  */
 class UpdateOwnCommentReplyRule extends DefaultOwnContentRule
 {

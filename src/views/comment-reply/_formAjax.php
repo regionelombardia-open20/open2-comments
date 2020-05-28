@@ -1,17 +1,17 @@
 <?php
 
 /**
- * Lombardia Informatica S.p.A.
+ * Aria S.p.A.
  * OPEN 2.0
  *
  *
- * @package    lispa\amos\comments\views\comment-reply
+ * @package    open20\amos\comments\views\comment-reply
  * @category   CategoryName
  */
 
 /**
  * @var yii\web\View $this
- * @var lispa\amos\comments\models\CommentReply $model
+ * @var open20\amos\comments\models\CommentReply $model
  * @var yii\widgets\ActiveForm $form
  */
 ?>

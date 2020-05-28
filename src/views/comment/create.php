@@ -1,19 +1,19 @@
 <?php
 
 /**
- * Lombardia Informatica S.p.A.
+ * Aria S.p.A.
  * OPEN 2.0
  *
  *
- * @package    lispa\amos\comments\views\comment
+ * @package    open20\amos\comments\views\comment
  * @category   CategoryName
  */
 
-use lispa\amos\comments\AmosComments;
+use open20\amos\comments\AmosComments;
 
 /**
  * @var yii\web\View $this
- * @var lispa\amos\comments\models\Comment $model
+ * @var open20\amos\comments\models\Comment $model
  */
 
 $this->title = AmosComments::t('amoscomments', 'Create');

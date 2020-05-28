@@ -1,14 +1,14 @@
 {
-    "name": "lispa/amos-comments",
+    "name": "open20/amos-comments",
     "description": "Comments for contents - plugin",
     "keywords": ["amos", "yii2", "comments"],
     "type": "plugin",
-    "proscription": "BSD-3-Clause",
+    "license": "BSD-3-Clause",
     "require": {
         "php": ">=5.4.0",
-        "lispa/amos-core" : "*",
-        "lispa/amos-admin" : "*",
-        "lispa/amos-attachments" : "*"
+        "open20/amos-core": "^1.9.60",
+        "open20/amos-admin": ">=1.7",
+        "open20/amos-attachments": "^1.1.9"
     },
     "extra": {
         "asset-installer-paths": {
@@ -18,7 +18,7 @@
     },
     "autoload": {
         "psr-4": {
-            "lispa\\amos\\comments\\": "src"
+            "open20\\amos\\comments\\": "src"
         }
     }
 }

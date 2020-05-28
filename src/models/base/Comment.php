@@ -1,18 +1,18 @@
 <?php
 
 /**
- * Lombardia Informatica S.p.A.
+ * Aria S.p.A.
  * OPEN 2.0
  *
  *
- * @package    lispa\amos\comments\models\base
+ * @package    open20\amos\comments\models\base
  * @category   CategoryName
  */
 
-namespace lispa\amos\comments\models\base;
+namespace open20\amos\comments\models\base;
 
-use lispa\amos\comments\AmosComments;
-use lispa\amos\notificationmanager\record\NotifyRecord;
+use open20\amos\comments\AmosComments;
+use open20\amos\notificationmanager\record\NotifyRecord;
 use yii\helpers\ArrayHelper;
 
 /**
@@ -30,9 +30,9 @@ use yii\helpers\ArrayHelper;
  * @property integer $updated_by
  * @property integer $deleted_by
  *
- * @property \lispa\amos\comments\models\CommentReply[] $commentReplies
+ * @property \open20\amos\comments\models\CommentReply[] $commentReplies
  *
- * @package lispa\amos\comments\models\base
+ * @package open20\amos\comments\models\base
  */
 class Comment extends NotifyRecord
 {
@@ -82,6 +82,6 @@ class Comment extends NotifyRecord
      */
     public function getCommentReplies()
     {
-        return $this->hasMany(\lispa\amos\comments\models\CommentReply::className(), ['comment_id' => 'id']);
+        return $this->hasMany(\open20\amos\comments\models\CommentReply::className(), ['comment_id' => 'id']);
     }
 }

@@ -1,22 +1,22 @@
 <?php
 
 /**
- * Lombardia Informatica S.p.A.
+ * Aria S.p.A.
  * OPEN 2.0
  *
  *
- * @package    lispa\amos\comments\models
+ * @package    open20\amos\comments\models
  * @category   CategoryName
  */
 
-namespace lispa\amos\comments\models;
+namespace open20\amos\comments\models;
 
 /**
  * Class CommentContextAttribute
  * This is the model class for table "comment_context_attribute".
- * @package lispa\amos\comments\models
+ * @package open20\amos\comments\models
  */
-class CommentContextAttribute extends \lispa\amos\comments\models\base\CommentContextAttribute
+class CommentContextAttribute extends \open20\amos\comments\models\base\CommentContextAttribute
 {
 
 }

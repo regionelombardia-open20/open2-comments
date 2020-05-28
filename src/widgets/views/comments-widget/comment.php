@@ -1,29 +1,30 @@
 <?php
 
 /**
- * Lombardia Informatica S.p.A.
+ * Aria S.p.A.
  * OPEN 2.0
  *
  *
- * @package    lispa\amos\comments\widgets\views\comments-widget
+ * @package    open20\amos\comments\widgets\views\comments-widget
  * @category   CategoryName
  */
 
-use lispa\amos\attachments\components\AttachmentsInput;
-use lispa\amos\comments\AmosComments;
-use lispa\amos\comments\assets\CommentsAsset;
-use lispa\amos\comments\models\Comment;
-use lispa\amos\core\forms\AccordionWidget;
-use lispa\amos\core\forms\TextEditorWidget;
-use lispa\amos\core\helpers\Html;
-use lispa\amos\core\icons\AmosIcons;
-use lispa\amos\core\utilities\ModalUtility;
+use open20\amos\attachments\components\AttachmentsInput;
+use open20\amos\comments\AmosComments;
+use open20\amos\comments\assets\CommentsAsset;
+use open20\amos\comments\models\Comment;
+use open20\amos\core\forms\AccordionWidget;
+use open20\amos\core\forms\TextEditorWidget;
+use open20\amos\core\helpers\Html;
+use open20\amos\core\icons\AmosIcons;
+use open20\amos\core\utilities\ModalUtility;
 use yii\web\View;
+use open20\amos\news\models\News;
 
 CommentsAsset::register($this);
 
 /**
- * @var \lispa\amos\comments\widgets\CommentsWidget $widget
+ * @var \open20\amos\comments\widgets\CommentsWidget $widget
  */
 
 $js = "
@@ -126,6 +127,8 @@ ModalUtility::createAlertModal([
                 'title' => AmosComments::t('amoscomments', 'Comment content')]),
             ['class' => 'col-xs-12 text-right m-t-15 nop']
         );
+        if(!isset(Yii::$app->params['isPoi']) || !($widget->model->className() == News::className() && $widget->model->id == 3126))
+	{
         ?>
 
         <?= AccordionWidget::widget([
@@ -145,9 +148,10 @@ ModalUtility::createAlertModal([
                 ]
             ],
             'options' => [
-                'class' => 'first-accordion'
+                'class' => (empty($commentsModule->layoutInverted) || $commentsModule->layoutInverted == false) ? 'first-accordion' : ''
             ]
-        ]); ?>
+        ]); 
+        }?>
 
     <?php } ?>
 </div>

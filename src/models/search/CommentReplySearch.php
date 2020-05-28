@@ -1,23 +1,23 @@
 <?php
 
 /**
- * Lombardia Informatica S.p.A.
+ * Aria S.p.A.
  * OPEN 2.0
  *
  *
- * @package    lispa\amos\comments\models\search
+ * @package    open20\amos\comments\models\search
  * @category   CategoryName
  */
 
-namespace lispa\amos\comments\models\search;
+namespace open20\amos\comments\models\search;
 
-use lispa\amos\comments\models\CommentReply;
+use open20\amos\comments\models\CommentReply;
 use yii\base\Model;
 use yii\data\ActiveDataProvider;
 
 /**
  * Class CommentReplySearch
- * @package lispa\amos\comments\models\search
+ * @package open20\amos\comments\models\search
  */
 class CommentReplySearch extends CommentReply
 {

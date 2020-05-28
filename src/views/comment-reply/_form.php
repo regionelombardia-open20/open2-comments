@@ -1,28 +1,28 @@
 <?php
 
 /**
- * Lombardia Informatica S.p.A.
+ * Aria S.p.A.
  * OPEN 2.0
  *
  *
- * @package    lispa\amos\comments\views\comment-reply
+ * @package    open20\amos\comments\views\comment-reply
  * @category   CategoryName
  */
 
-use lispa\amos\comments\AmosComments;
-use lispa\amos\comments\assets\CommentsAsset;
-use lispa\amos\core\forms\ActiveForm;
-use lispa\amos\core\forms\AttachmentsWidget;
-use lispa\amos\core\forms\CloseSaveButtonWidget;
-use lispa\amos\core\forms\CreatedUpdatedWidget;
-use lispa\amos\core\forms\TextEditorWidget;
-use lispa\amos\core\helpers\Html;
+use open20\amos\comments\AmosComments;
+use open20\amos\comments\assets\CommentsAsset;
+use open20\amos\core\forms\ActiveForm;
+use open20\amos\core\forms\AttachmentsWidget;
+use open20\amos\core\forms\CloseSaveButtonWidget;
+use open20\amos\core\forms\CreatedUpdatedWidget;
+use open20\amos\core\forms\TextEditorWidget;
+use open20\amos\core\helpers\Html;
 
 CommentsAsset::register($this);
 
 /**
  * @var \yii\web\View $this
- * @var \lispa\amos\comments\models\CommentReply $model
+ * @var \open20\amos\comments\models\CommentReply $model
  * @var \yii\widgets\ActiveForm $form
  * @var string $fid
  */

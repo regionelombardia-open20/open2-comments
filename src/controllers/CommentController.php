@@ -1,25 +1,25 @@
 <?php
-
 /**
- * Lombardia Informatica S.p.A.
+ * Aria S.p.A.
  * OPEN 2.0
  *
  *
- * @package    lispa\amos\comments\controllers
+ * @package    open20\amos\comments\controllers
  * @category   CategoryName
  */
 
-namespace lispa\amos\comments\controllers;
+namespace open20\amos\comments\controllers;
 
-use lispa\amos\comments\AmosComments;
-use lispa\amos\comments\base\PartecipantsNotification;
-use lispa\amos\comments\exceptions\CommentsException;
-use lispa\amos\comments\models\Comment;
-use lispa\amos\comments\models\search\CommentSearch;
-use lispa\amos\core\controllers\CrudController;
-use lispa\amos\core\helpers\BreadcrumbHelper;
-use lispa\amos\core\helpers\Html;
-use lispa\amos\core\icons\AmosIcons;
+use open20\amos\comments\AmosComments;
+use open20\amos\comments\base\PartecipantsNotification;
+use open20\amos\comments\exceptions\CommentsException;
+use open20\amos\comments\models\Comment;
+use open20\amos\comments\models\search\CommentSearch;
+use open20\amos\core\controllers\CrudController;
+use open20\amos\core\helpers\BreadcrumbHelper;
+use open20\amos\core\helpers\Html;
+use open20\amos\core\icons\AmosIcons;
+use open20\amos\notificationmanager\utility\NotifyUtility;
 use Yii;
 use yii\filters\AccessControl;
 use yii\filters\VerbFilter;
@@ -29,9 +29,9 @@ use yii\helpers\Url;
 /**
  * Class CommentController
  *
- * @property \lispa\amos\comments\models\Comment $model
+ * @property \open20\amos\comments\models\Comment $model
  *
- * @package lispa\amos\comments\controllers
+ * @package open20\amos\comments\controllers
  */
 class CommentController extends CrudController
 {
@@ -51,7 +51,7 @@ class CommentController extends CrudController
         $this->setAvailableViews([
             'grid' => [
                 'name' => 'grid',
-                'label' => AmosIcons::show('view-list-alt') . Html::tag('p', AmosComments::t('amoscomments', 'Table')),
+                'label' => AmosIcons::show('view-list-alt').Html::tag('p', AmosComments::t('amoscomments', 'Table')),
                 'url' => '?currentView=grid'
             ]
         ]);
@@ -65,25 +65,26 @@ class CommentController extends CrudController
      */
     public function behaviors()
     {
-        return ArrayHelper::merge(parent::behaviors(), [
-            'access' => [
-                'class' => AccessControl::className(),
-                'rules' => [
-                    [
-                        'allow' => true,
-                        'actions' => [
-                            'create-ajax'
-                        ],
-                        'roles' => ['COMMENTS_ADMINISTRATOR', 'COMMENTS_CONTRIBUTOR']
+        return ArrayHelper::merge(parent::behaviors(),
+                [
+                'access' => [
+                    'class' => AccessControl::className(),
+                    'rules' => [
+                        [
+                            'allow' => true,
+                            'actions' => [
+                                'create-ajax'
+                            ],
+                            'roles' => ['COMMENTS_ADMINISTRATOR', 'COMMENTS_CONTRIBUTOR']
+                        ]
+                    ]
+                ],
+                'verbs' => [
+                    'class' => VerbFilter::className(),
+                    'actions' => [
+                        'delete' => ['post', 'get']
                     ]
                 ]
-            ],
-            'verbs' => [
-                'class' => VerbFilter::className(),
-                'actions' => [
-                    'delete' => ['post', 'get']
-                ]
-            ]
         ]);
     }
 
@@ -129,13 +130,14 @@ class CommentController extends CrudController
     {
         $this->setUpLayout('form');
         $this->model = new Comment();
-        $post = Yii::$app->request->post();
+        $post        = Yii::$app->request->post();
 
         /** @var AmosComments $commentsModule */
         $commentsModule = Yii::$app->getModule(AmosComments::getModuleName());
 
         if ($this->model->load($post) && $this->model->save()) {
-            if (!$commentsModule->enableUserSendMailCheckbox || ($commentsModule->enableUserSendMailCheckbox && isset($post['send_notify_mail']) && $post['send_notify_mail'])) {
+            if (!$commentsModule->enableUserSendMailCheckbox || ($commentsModule->enableUserSendMailCheckbox && isset($post['send_notify_mail'])
+                && $post['send_notify_mail'])) {
                 $partecipantsnotify = $this->getParticipantsNotificationInstance();
                 $partecipantsnotify->partecipantAlert($this->model);
             }
@@ -147,7 +149,7 @@ class CommentController extends CrudController
             return $this->redirect(Url::previous());
         } else {
             return $this->render('create', [
-                'model' => $this->model,
+                    'model' => $this->model,
             ]);
         }
     }
@@ -166,7 +168,7 @@ class CommentController extends CrudController
         }
 
         Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
-        $post = Yii::$app->request->post();
+        $post                       = Yii::$app->request->post();
 
         if (!$this->model->load($post)) {
             return [
@@ -185,9 +187,11 @@ class CommentController extends CrudController
         }
 
         if ($this->model->save()) {
+//            NotifyUtility::getNetworkNotificationConf()
             /** @var AmosComments $commentsModule */
             $commentsModule = Yii::$app->getModule(AmosComments::getModuleName());
-            if (!$commentsModule->enableUserSendMailCheckbox || ($commentsModule->enableUserSendMailCheckbox && isset($post['send_notify_mail']) && $post['send_notify_mail'])) {
+            if (!$commentsModule->enableUserSendMailCheckbox || ($commentsModule->enableUserSendMailCheckbox && isset($post['send_notify_mail'])
+                && $post['send_notify_mail'])) {
                 $partecipantsnotify = $this->getParticipantsNotificationInstance();
                 $partecipantsnotify->partecipantAlert($this->model);
             }
@@ -205,29 +209,40 @@ class CommentController extends CrudController
      * @param int $id
      * @return string|\yii\web\Response
      */
-    public function actionUpdate($id)
+    public function actionUpdate($id, $noAttach = null, $url = null)
     {
         $this->setUpLayout('form');
         $this->model = $this->findModel($id);
         if ($this->model->load(Yii::$app->request->post()) && $this->model->validate()) {
             if ($this->model->save()) {
-                Yii::$app->getSession()->addFlash('success', AmosComments::t('amoscomments', 'Comment successfully updated.'));
+                Yii::$app->getSession()->addFlash('success',
+                    AmosComments::t('amoscomments', 'Comment successfully updated.'));
+                if (!empty($url)) {
+                    return $this->redirect($url);
+                }
                 return $this->redirect(BreadcrumbHelper::lastCrumbUrl());
             } else {
-                Yii::$app->getSession()->addFlash('danger', AmosComments::t('amoscomments', 'Comment not updated, check the data entered.'));
-                return $this->render('update', [
-                    'model' => $this->model,
-                    'fid' => NULL,
-                    'dataField' => NULL,
-                    'dataEntity' => NULL,
+                Yii::$app->getSession()->addFlash('danger',
+                    AmosComments::t('amoscomments', 'Comment not updated, check the data entered.'));
+                return $this->render('update',
+                        [
+                        'no_attach' => $noAttach,
+                        'url' => $url,
+                        'model' => $this->model,
+                        'fid' => NULL,
+                        'dataField' => NULL,
+                        'dataEntity' => NULL,
                 ]);
             }
         } else {
-            return $this->render('update', [
-                'model' => $this->model,
-                'fid' => NULL,
-                'dataField' => NULL,
-                'dataEntity' => NULL,
+            return $this->render('update',
+                    [
+                    'no_attach' => $noAttach,
+                    'model' => $this->model,
+                    'url' => $url,
+                    'fid' => NULL,
+                    'dataField' => NULL,
+                    'dataEntity' => NULL,
             ]);
         }
     }
@@ -237,18 +252,19 @@ class CommentController extends CrudController
      * @param int $id
      * @return \yii\web\Response
      */
-    public function actionDelete($id)
+    public function actionDelete($id, $url = null)
     {
         $this->model = $this->findModel($id);
         if ($this->model) {
-            $ok = true;
+            $ok             = true;
             $commentReplies = $this->model->commentReplies;
 
             if (!empty($commentReplies)) {
                 foreach ($commentReplies as $commentReply) {
                     $commentReply->delete();
                     if ($commentReply->getErrors()) {
-                        Yii::$app->getSession()->addFlash('danger', AmosComments::t('amoscomments', 'Errors while deleting a comment reply.'));
+                        Yii::$app->getSession()->addFlash('danger',
+                            AmosComments::t('amoscomments', 'Errors while deleting a comment reply.'));
                         $ok = false;
                         break;
                     }
@@ -258,13 +274,18 @@ class CommentController extends CrudController
             if ($ok) {
                 $this->model->delete();
                 if (!$this->model->getErrors()) {
-                    Yii::$app->getSession()->addFlash('success', AmosComments::t('amoscomments', 'Comment successfully deleted.'));
+                    Yii::$app->getSession()->addFlash('success',
+                        AmosComments::t('amoscomments', 'Comment successfully deleted.'));
                 } else {
-                    Yii::$app->getSession()->addFlash('danger', AmosComments::t('amoscomments', 'Errors while deleting comment.'));
+                    Yii::$app->getSession()->addFlash('danger',
+                        AmosComments::t('amoscomments', 'Errors while deleting comment.'));
                 }
             }
         } else {
             Yii::$app->getSession()->addFlash('danger', AmosComments::t('amoscomments', 'Comment not found.'));
+        }
+        if (!empty($url)) {
+            return $this->redirect($url);
         }
         return $this->redirect(Url::previous());
     }

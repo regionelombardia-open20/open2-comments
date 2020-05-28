@@ -1,17 +1,17 @@
 <?php
 
 /**
- * Lombardia Informatica S.p.A.
+ * Aria S.p.A.
  * OPEN 2.0
  *
  *
- * @package    lispa\amos\comments\models\base
+ * @package    open20\amos\comments\models\base
  * @category   CategoryName
  */
 
-namespace lispa\amos\comments\models\base;
+namespace open20\amos\comments\models\base;
 
-use lispa\amos\comments\AmosComments;
+use open20\amos\comments\AmosComments;
 use yii\helpers\ArrayHelper;
 
 /**
@@ -29,9 +29,9 @@ use yii\helpers\ArrayHelper;
  * @property integer $updated_by
  * @property integer $deleted_by
  *
- * @package lispa\amos\comments\models\base
+ * @package open20\amos\comments\models\base
  */
-class CommentContextAttribute extends \lispa\amos\core\record\Record
+class CommentContextAttribute extends \open20\amos\core\record\Record
 {
     /**
      * @inheritdoc

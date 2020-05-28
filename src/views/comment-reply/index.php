@@ -1,21 +1,21 @@
 <?php
 
 /**
- * Lombardia Informatica S.p.A.
+ * Aria S.p.A.
  * OPEN 2.0
  *
  *
- * @package    lispa\amos\comments\views\comment-reply
+ * @package    open20\amos\comments\views\comment-reply
  * @category   CategoryName
  */
 
-use lispa\amos\comments\AmosComments;
-use lispa\amos\core\views\DataProviderView;
+use open20\amos\comments\AmosComments;
+use open20\amos\core\views\DataProviderView;
 
 /**
  * @var yii\web\View $this
  * @var yii\data\ActiveDataProvider $dataProvider
- * @var lispa\amos\comments\models\search\CommentReplySearch $model
+ * @var open20\amos\comments\models\search\CommentReplySearch $model
  * @var string $currentView
  */
 
@@ -37,7 +37,7 @@ $this->params['breadcrumbs'][] = $this->title;
             'columns' => [
                 'comment_text',
                 [
-                    'class' => 'lispa\amos\core\views\grid\ActionColumn',
+                    'class' => 'open20\amos\core\views\grid\ActionColumn',
                 ]
             ]
         ]

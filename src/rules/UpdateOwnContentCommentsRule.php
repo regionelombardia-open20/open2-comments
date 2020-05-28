@@ -1,23 +1,23 @@
 <?php
 
 /**
- * Lombardia Informatica S.p.A.
+ * Aria S.p.A.
  * OPEN 2.0
  *
  *
- * @package    lispa\amos\comments\rules
+ * @package    open20\amos\comments\rules
  * @category   CategoryName
  */
 
-namespace lispa\amos\comments\rules;
+namespace open20\amos\comments\rules;
 
-use lispa\amos\comments\models\Comment;
-use lispa\amos\comments\models\CommentReply;
-use lispa\amos\core\rules\DefaultOwnContentRule;
+use open20\amos\comments\models\Comment;
+use open20\amos\comments\models\CommentReply;
+use open20\amos\core\rules\DefaultOwnContentRule;
 
 /**
  * Class UpdateOwnContentCommentsRule
- * @package lispa\amos\comments\rules
+ * @package open20\amos\comments\rules
  */
 class UpdateOwnContentCommentsRule extends DefaultOwnContentRule
 {
@@ -29,7 +29,7 @@ class UpdateOwnContentCommentsRule extends DefaultOwnContentRule
     public function execute($user, $item, $params)
     {
         if (isset($params['model'])) {
-            /** @var \lispa\amos\core\record\Record $model */
+            /** @var \open20\amos\core\record\Record $model */
             $model = $params['model'];
             if (!$model->id) {
                 $post = \Yii::$app->getRequest()->post();
@@ -47,9 +47,9 @@ class UpdateOwnContentCommentsRule extends DefaultOwnContentRule
                 }else {
                     /** @var Comment $comment */
                     $comment = $model->comment;
-                    /** @var \lispa\amos\core\record\Record $contextModelClassName */
+                    /** @var \open20\amos\core\record\Record $contextModelClassName */
                     $contextModelClassName = $comment->context;
-                    /** @var \lispa\amos\core\record\Record $contextModel */
+                    /** @var \open20\amos\core\record\Record $contextModel */
                     $contextModel = $contextModelClassName::findOne($comment->context_id);
                     return ($contextModel->created_by == $user);
                 }
@@ -58,9 +58,9 @@ class UpdateOwnContentCommentsRule extends DefaultOwnContentRule
                     return true;
                 }else {
                     /** @var Comment $model */
-                    /** @var \lispa\amos\core\record\Record $contextModelClassName */
+                    /** @var \open20\amos\core\record\Record $contextModelClassName */
                     $contextModelClassName = $model->context;
-                    /** @var \lispa\amos\core\record\Record $contextModel */
+                    /** @var \open20\amos\core\record\Record $contextModel */
                     $contextModel = $contextModelClassName::findOne($model->context_id);
                     return ($contextModel->created_by == $user);
                 }

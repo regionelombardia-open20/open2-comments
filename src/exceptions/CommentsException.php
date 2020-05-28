@@ -1,19 +1,19 @@
 <?php
 
 /**
- * Lombardia Informatica S.p.A.
+ * Aria S.p.A.
  * OPEN 2.0
  *
  *
- * @package    lispa\amos\comments\exceptions
+ * @package    open20\amos\comments\exceptions
  * @category   CategoryName
  */
 
-namespace lispa\amos\comments\exceptions;
+namespace open20\amos\comments\exceptions;
 
 /**
  * Class CommentsException
- * @package lispa\amos\comments\exceptions
+ * @package open20\amos\comments\exceptions
  */
 class CommentsException extends \Exception
 {

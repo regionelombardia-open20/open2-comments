@@ -1,24 +1,24 @@
 <?php
 
 /**
- * Lombardia Informatica S.p.A.
+ * Aria S.p.A.
  * OPEN 2.0
  *
  *
- * @package    lispa\amos\comments\controllers
+ * @package    open20\amos\comments\controllers
  * @category   CategoryName
  */
 
-namespace lispa\amos\comments\controllers;
+namespace open20\amos\comments\controllers;
 
-use lispa\amos\comments\AmosComments;
-use lispa\amos\comments\base\PartecipantsNotification;
-use lispa\amos\comments\exceptions\CommentsException;
-use lispa\amos\comments\models\CommentReply;
-use lispa\amos\comments\models\search\CommentReplySearch;
-use lispa\amos\core\controllers\CrudController;
-use lispa\amos\core\helpers\Html;
-use lispa\amos\core\icons\AmosIcons;
+use open20\amos\comments\AmosComments;
+use open20\amos\comments\base\PartecipantsNotification;
+use open20\amos\comments\exceptions\CommentsException;
+use open20\amos\comments\models\CommentReply;
+use open20\amos\comments\models\search\CommentReplySearch;
+use open20\amos\core\controllers\CrudController;
+use open20\amos\core\helpers\Html;
+use open20\amos\core\icons\AmosIcons;
 use Yii;
 use yii\filters\AccessControl;
 use yii\filters\VerbFilter;
@@ -28,9 +28,9 @@ use yii\helpers\Url;
 /**
  * Class CommentReplyController
  *
- * @property \lispa\amos\comments\models\CommentReply $model
+ * @property \open20\amos\comments\models\CommentReply $model
  *
- * @package lispa\amos\comments\controllers
+ * @package open20\amos\comments\controllers
  */
 class CommentReplyController extends CrudController
 {
@@ -122,7 +122,7 @@ class CommentReplyController extends CrudController
     }
 
     /**
-     * @return CommentReply|\lispa\amos\core\record\Record|string|\yii\web\Response
+     * @return CommentReply|\open20\amos\core\record\Record|string|\yii\web\Response
      */
     public function actionCreate()
     {
@@ -151,7 +151,7 @@ class CommentReplyController extends CrudController
     }
 
     /**
-     * @return array|CommentReply|\lispa\amos\core\record\Record
+     * @return array|CommentReply|\open20\amos\core\record\Record
      * @throws CommentsException
      */
     public function actionCreateAjax()

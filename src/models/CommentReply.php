@@ -1,21 +1,21 @@
 <?php
 
 /**
- * Lombardia Informatica S.p.A.
+ * Aria S.p.A.
  * OPEN 2.0
  *
  *
- * @package    lispa\amos\comments\models
+ * @package    open20\amos\comments\models
  * @category   CategoryName
  */
 
-namespace lispa\amos\comments\models;
+namespace open20\amos\comments\models;
 
-use lispa\amos\attachments\behaviors\FileBehavior;
-use lispa\amos\attachments\models\File;
-use lispa\amos\comments\AmosComments;
+use open20\amos\attachments\behaviors\FileBehavior;
+use open20\amos\attachments\models\File;
+use open20\amos\comments\AmosComments;
 use yii\helpers\ArrayHelper;
-use lispa\amos\notificationmanager\behaviors\NotifyBehavior;
+use open20\amos\notificationmanager\behaviors\NotifyBehavior;
 
 /**
  * Class CommentReply
@@ -24,9 +24,9 @@ use lispa\amos\notificationmanager\behaviors\NotifyBehavior;
  * @method \yii\db\ActiveQuery hasOneFile($attribute = 'file', $sort = 'id')
  * @method \yii\db\ActiveQuery hasMultipleFiles($attribute = 'file', $sort = 'id')
  *
- * @package lispa\amos\comments\models
+ * @package open20\amos\comments\models
  */
-class CommentReply extends \lispa\amos\comments\models\base\CommentReply
+class CommentReply extends \open20\amos\comments\models\base\CommentReply
 {
     const VIEW_TYPE_POSITION = 'comment_reply';
 

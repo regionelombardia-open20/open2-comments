@@ -1,26 +1,26 @@
 <?php
 
 /**
- * Lombardia Informatica S.p.A.
+ * Aria S.p.A.
  * OPEN 2.0
  *
  *
- * @package    lispa\amos\comments\views\comment
+ * @package    open20\amos\comments\views\comment
  * @category   CategoryName
  */
 
-use lispa\amos\attachments\components\AttachmentsInput;
-use lispa\amos\attachments\components\AttachmentsTableWithPreview;
-use lispa\amos\comments\AmosComments;
-use lispa\amos\core\forms\ActiveForm;
-use lispa\amos\core\forms\CloseSaveButtonWidget;
-use lispa\amos\core\forms\CreatedUpdatedWidget;
-use lispa\amos\core\forms\Tabs;
+use open20\amos\attachments\components\AttachmentsInput;
+use open20\amos\attachments\components\AttachmentsTableWithPreview;
+use open20\amos\comments\AmosComments;
+use open20\amos\core\forms\ActiveForm;
+use open20\amos\core\forms\CloseSaveButtonWidget;
+use open20\amos\core\forms\CreatedUpdatedWidget;
+use open20\amos\core\forms\Tabs;
 use yii\redactor\widgets\Redactor;
 
 /**
  * @var yii\web\View $this
- * @var lispa\amos\comments\models\Comment $model
+ * @var open20\amos\comments\models\Comment $model
  * @var yii\widgets\ActiveForm $form
  * @var string $fid
  */

@@ -1,19 +1,19 @@
 <?php
 
 /**
- * Lombardia Informatica S.p.A.
+ * Aria S.p.A.
  * OPEN 2.0
  *
  *
- * @package    lispa\amos\comments\widgets\views\comments-widget
+ * @package    open20\amos\comments\widgets\views\comments-widget
  * @category   CategoryName
  */
 
-use lispa\amos\comments\AmosComments;
-use lispa\amos\core\helpers\Html;
+use open20\amos\comments\AmosComments;
+use open20\amos\core\helpers\Html;
 
 /**
- * @var \lispa\amos\comments\widgets\CommentsWidget $widget
+ * @var \open20\amos\comments\widgets\CommentsWidget $widget
  * @var bool $enableUserSendMailCheckbox
  * @var bool $displayNotifyCheckBox
  * @var string $checkboxName

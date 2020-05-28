@@ -1,19 +1,19 @@
 <?php
 
 /**
- * Lombardia Informatica S.p.A.
+ * Aria S.p.A.
  * OPEN 2.0
  *
  *
- * @package    lispa\amos\comments\models
+ * @package    open20\amos\comments\models
  * @category   CategoryName
  */
 
-namespace lispa\amos\comments\models;
+namespace open20\amos\comments\models;
 
 /**
  * Interface CommentInterface
- * @package lispa\amos\comments\models
+ * @package open20\amos\comments\models
  */
 interface CommentInterface
 {

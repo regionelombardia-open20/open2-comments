@@ -1,23 +1,23 @@
 <?php
 
 /**
- * Lombardia Informatica S.p.A.
+ * Aria S.p.A.
  * OPEN 2.0
  *
  *
- * @package    lispa\amos\comments\views\comment\email
+ * @package    open20\amos\comments\views\comment\email
  * @category   CategoryName
  */
 
-use lispa\amos\core\helpers\Html;
-use lispa\amos\core\interfaces\BaseContentModelInterface;
-use lispa\amos\core\interfaces\ViewModelInterface;
-use lispa\amos\cwh\base\ModelContentInterface;
+use open20\amos\core\helpers\Html;
+use open20\amos\core\interfaces\BaseContentModelInterface;
+use open20\amos\core\interfaces\ViewModelInterface;
+use open20\amos\cwh\base\ModelContentInterface;
 
 /**
- * @var \lispa\amos\core\record\Record $contextModel
- * @var \lispa\amos\core\record\Record $model
- * @var \lispa\amos\core\record\Record $model_reply
+ * @var \open20\amos\core\record\Record $contextModel
+ * @var \open20\amos\core\record\Record $model
+ * @var \open20\amos\core\record\Record $model_reply
  */
 
 if (!empty($user)) {
@@ -32,7 +32,7 @@ if (($contextModel instanceof BaseContentModelInterface) || $contextModel->hasMe
     $linkText = $contextModel->getTitle();
 }
 
-if ($contextModel instanceof ViewModelInterface) {
+if (method_exists($contextModel, 'getFullViewUrl')) {
     $link = \Yii::$app->urlManager->createAbsoluteUrl($contextModel->getFullViewUrl()) . "#comments_anchor";
 }
 
@@ -62,7 +62,7 @@ if (($contextModel instanceof BaseContentModelInterface) || $contextModel->hasMe
                     }
                     ?>
                     <?php if ($model->getCreatedUserProfile() != null): ?>
-                        <?= \lispa\amos\admin\widgets\UserCardWidget::widget([
+                        <?= \open20\amos\admin\widgets\UserCardWidget::widget([
                             'model' => $model->getCreatedUserProfile()->one(),
                             'onlyAvatar' => true,
                             'absoluteUrl' => true
@@ -72,7 +72,7 @@ if (($contextModel instanceof BaseContentModelInterface) || $contextModel->hasMe
                 </div>
 
                 <div style="margin-left: 20px;">
-                    <?= \lispa\amos\core\forms\PublishedByWidget::widget([
+                    <?= \open20\amos\core\forms\PublishedByWidget::widget([
                         'model' => $model,
                         'modelContext' => $contextModel,
                         'layout' => $layout,
@@ -92,7 +92,7 @@ if (($contextModel instanceof BaseContentModelInterface) || $contextModel->hasMe
                                         $modelReplyCreatedUserProfile = $model_reply->createdUserProfile;
                                         ?>
                                         <?php if ($modelReplyCreatedUserProfile != null): ?>
-                                            <?= \lispa\amos\admin\widgets\UserCardWidget::widget([
+                                            <?= \open20\amos\admin\widgets\UserCardWidget::widget([
                                                 'model' => $modelReplyCreatedUserProfile,
                                                 'onlyAvatar' => true,
                                                 'absoluteUrl' => true
@@ -101,7 +101,7 @@ if (($contextModel instanceof BaseContentModelInterface) || $contextModel->hasMe
                                         <?php endif; ?>
                                     </div>
                                     <div style="margin-left: 20px;">
-                                        <?= \lispa\amos\core\forms\PublishedByWidget::widget([
+                                        <?= \open20\amos\core\forms\PublishedByWidget::widget([
                                             'model' => $model_reply,
                                             'layout' => $layout,
                                         ]) ?>

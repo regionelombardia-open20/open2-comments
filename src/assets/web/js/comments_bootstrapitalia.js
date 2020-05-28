@@ -85,7 +85,7 @@ Comments.saveComment = function (context_id, context, csrfKey, csrfValue) {
                     Comments.reloadComments();
                     comment_textarea.val('');
                     Comments.emptyRedactorEditor(comment_textarea.attr('id'));
-                    $('#commentAttachments').fileinput('clear');
+                    $('#commentAttachments').val('');
                 }
             },
             error: function (response) {

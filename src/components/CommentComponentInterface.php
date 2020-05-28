@@ -1,21 +1,21 @@
 <?php
 
 /**
- * Lombardia Informatica S.p.A.
+ * Aria S.p.A.
  * OPEN 2.0
  *
  *
- * @package    lispa\amos\comments\components
+ * @package    open20\amos\comments\components
  * @category   CategoryName
  */
 
-namespace lispa\amos\comments\components;
+namespace open20\amos\comments\components;
 
 use yii\base\Event;
 
 /**
  * Interface CommentComponentInterface
- * @package lispa\amos\comments\components
+ * @package open20\amos\comments\components
  */
 interface CommentComponentInterface
 {

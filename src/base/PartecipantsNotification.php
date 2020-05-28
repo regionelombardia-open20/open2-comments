@@ -1,32 +1,32 @@
 <?php
 /**
- * Lombardia Informatica S.p.A.
+ * Aria S.p.A.
  * OPEN 2.0
  *
  *
- * @package    lispa\amos\comments\base
+ * @package    open20\amos\comments\base
  * @category   CategoryName
  */
 
-namespace lispa\amos\comments\base;
+namespace open20\amos\comments\base;
 
-use lispa\amos\comments\AmosComments;
-use lispa\amos\comments\models\Comment;
-use lispa\amos\comments\models\CommentReply;
-use lispa\amos\core\controllers\CrudController;
-use lispa\amos\core\interfaces\ModelLabelsInterface;
-use lispa\amos\core\record\Record;
-use lispa\amos\core\user\User;
-use lispa\amos\core\utilities\Email;
+use open20\amos\comments\AmosComments;
+use open20\amos\comments\models\Comment;
+use open20\amos\comments\models\CommentReply;
+use open20\amos\core\controllers\CrudController;
+use open20\amos\core\interfaces\ModelLabelsInterface;
+use open20\amos\core\record\Record;
+use open20\amos\core\user\User;
+use open20\amos\core\utilities\Email;
 use Yii;
-use yii\base\Object;
+use yii\base\BaseObject;
 use yii\helpers\ArrayHelper;
 
 /**
  * Class PartecipantsNotification
- * @package lispa\amos\comments\base
+ * @package open20\amos\comments\base
  */
-class PartecipantsNotification extends Object
+class PartecipantsNotification extends BaseObject
 {
     /**
      * @var AmosComments|null $commentsModule
@@ -69,9 +69,9 @@ class PartecipantsNotification extends Object
             $model_reply = $comment;
         }
 
-        /** @var \lispa\amos\core\record\Record $contextModelClassName */
+        /** @var \open20\amos\core\record\Record $contextModelClassName */
         $contextModelClassName = $model->context;
-        /** @var \lispa\amos\core\record\Record $contextModel */
+        /** @var \open20\amos\core\record\Record $contextModel */
         $contextModel          = $contextModelClassName::findOne($model->context_id);
 
         $users = $this->getRecipients($contextModel, $contextModelClassName);
@@ -89,9 +89,16 @@ class PartecipantsNotification extends Object
     {
         $users = $this->getDiscussionsRecipients($contextModel);
 
+        if (empty($users) && method_exists($contextModel, 'getRecipients')) {
+            $users = $contextModel->getRecipients();
+        }
+
         if (empty($users)) {
             $users = $this->getDefaultRecipients($contextModel, $contextModelClassName);
         }
+
+
+
 
         return $users;
     }
@@ -106,8 +113,8 @@ class PartecipantsNotification extends Object
         $users = [];
 
         // If the context is discussion, the emails must be sent to the participants in the scope.
-        if (Yii::$app->hasModule('discussioni') && ($contextModel instanceof \lispa\amos\discussioni\models\DiscussioniTopic)) {
-            /** @var \lispa\amos\discussioni\AmosDiscussioni $moduleDiscussioni */
+        if (Yii::$app->hasModule('discussioni') && ($contextModel instanceof \open20\amos\discussioni\models\DiscussioniTopic)) {
+            /** @var \open20\amos\discussioni\AmosDiscussioni $moduleDiscussioni */
             $moduleDiscussioni = Yii::$app->getModule('discussioni');
             $session           = \Yii::$app->session;
             $moduleCwh         = \Yii::$app->getModule('cwh');
@@ -115,8 +122,8 @@ class PartecipantsNotification extends Object
 
             if (!empty(\Yii::$app->params['isPoi']) && \Yii::$app->params['isPoi'] == true && !empty($scope) && !empty($scope['community'])
                 && $scope['community'] == 2750) {
-                $communityManager = \lispa\amos\community\models\CommunityUserMm::find()->andWhere(['community_id' => 2750])->andWhere([
-                    'role' => \lispa\amos\community\models\Community::ROLE_COMMUNITY_MANAGER]);
+                $communityManager = \open20\amos\community\models\CommunityUserMm::find()->andWhere(['community_id' => 2750])->andWhere([
+                    'role' => \open20\amos\community\models\Community::ROLE_COMMUNITY_MANAGER]);
                 foreach ($communityManager->all() as $idComm) {
                     $user = User::findOne($idComm->user_id);
                     if (!is_null($user)) {
@@ -127,15 +134,15 @@ class PartecipantsNotification extends Object
                 if ($moduleDiscussioni->hasProperty('notifyOnlyContributors') && !$moduleDiscussioni->notifyOnlyContributors) {
                     $moduleCwh = Yii::$app->getModule('cwh');
                     if (!is_null($moduleCwh)) {
-                        /** @var \lispa\amos\cwh\AmosCwh $moduleCwh */
-                        if (in_array(\lispa\amos\discussioni\models\DiscussioniTopic::className(),
+                        /** @var \open20\amos\cwh\AmosCwh $moduleCwh */
+                        if (in_array(\open20\amos\discussioni\models\DiscussioniTopic::className(),
                                 $moduleCwh->modelsEnabled)) {
-                            $cwhActiveQuery = new \lispa\amos\cwh\query\CwhActiveQuery(\lispa\amos\discussioni\models\DiscussioniTopic::className());
+                            $cwhActiveQuery = new \open20\amos\cwh\query\CwhActiveQuery(\open20\amos\discussioni\models\DiscussioniTopic::className());
                             if (in_array($contextModel->regola_pubblicazione,
-                                    \lispa\amos\cwh\utility\CwhUtil::getNetworkCwhRuleIds())) {
+                                    \open20\amos\cwh\utility\CwhUtil::getNetworkCwhRuleIds())) {
                                 $queryUsers = $cwhActiveQuery->getRecipients($contextModel->regola_pubblicazione,
                                     $contextModel->tagValues, $contextModel->destinatari);
-                                $queryUsers->andWhere(['<>', \lispa\amos\core\user\User::tableName().'.id', Yii::$app->user->id]); // Exclude logged user id
+                                $queryUsers->andWhere(['<>', \open20\amos\core\user\User::tableName().'.id', Yii::$app->user->id]); // Exclude logged user id
                                 $users      = ArrayHelper::map($queryUsers->all(), 'id', 'id');
                             }
                         }
@@ -187,19 +194,35 @@ class PartecipantsNotification extends Object
     private function sendEmail(array $userIds, $contextModel, $model, $model_reply = null)
     {
         try {
+            $moduleNotify = \Yii::$app->getModule('notify');
+
             foreach ($userIds as $id) {
-                $user    = User::findOne($id);
-                $subject = $this->getSubject($contextModel);
-                $message = $this->renderEmail($contextModel, $model, $model_reply, $user);
-                if (!is_null($user)) {
-                    if ($user->userProfile->isActive()) {
-                        $email = new Email();
-                        $from  = '';
-                        if (isset(Yii::$app->params['email-assistenza'])) {
-                            //use default platform email assistance
-                            $from = Yii::$app->params['email-assistenza'];
+                $notifyComment = true;
+                $user          = User::findOne($id);
+
+                if (!empty($moduleNotify)) {
+                    /** @var  $notificationConf  \open20\amos\notificationmanager\models\NotificationConf */
+                    $notificationConf = \open20\amos\notificationmanager\models\NotificationConf::find()
+                        ->andWhere(['user_id' => $id])
+                        ->one();
+                    if ($notificationConf->hasProperty('notifications_enabled') && ($notificationConf->notify_comments == 0
+                        || $notificationConf->notifications_enabled == 0)) {
+                        $notifyComment = false;
+                    }
+                }
+                if ($notifyComment) {
+                    $subject = $this->getSubject($contextModel);
+                    $message = $this->renderEmail($contextModel, $model, $model_reply, $user);
+                    if (!is_null($user)) {
+                        if ($user->userProfile->isActive()) {
+                            $email = new Email();
+                            $from  = '';
+                            if (isset(Yii::$app->params['email-assistenza'])) {
+                                //use default platform email assistance
+                                $from = Yii::$app->params['email-assistenza'];
+                            }
+                            $email->sendMail($from, [$user->email], $subject, $message);
                         }
-                        $email->sendMail($from, [$user->email], $subject, $message);
                     }
                 }
             }
@@ -214,8 +237,23 @@ class PartecipantsNotification extends Object
      */
     private function getSubject(Record $contextModel)
     {
-        $subject = $this->appController->renderMailPartial('email'.DIRECTORY_SEPARATOR.'content_subject',
-            ['contextModel' => $contextModel]);
+        $content_subject = 'email'.DIRECTORY_SEPARATOR.'content_subject';
+
+        if ($this->commentsModule) {
+            if (is_array($this->commentsModule->htmlMailContentSubject)) {
+                $contextModelClassName = $contextModel->className();
+                if (!empty($this->commentsModule->htmlMailContentSubject[$contextModelClassName])) {
+                    $content_subject = $this->commentsModule->htmlMailContentSubject[$contextModelClassName];
+                } else {
+                    $content_subject = $this->commentsModule->htmlMailContentSubjectDefault;
+                }
+            } else {
+                $content_subject = $this->commentsModule->htmlMailContentSubject;
+            }
+        }
+
+        $subject = $this->appController->renderMailPartial($content_subject, ['contextModel' => $contextModel]);
+
         return $subject;
     }
 
@@ -248,10 +286,19 @@ class PartecipantsNotification extends Object
      */
     private function renderContentTitle(ModelLabelsInterface $model, $modelComment, $model_reply)
     {
+        $content = 'email'.DIRECTORY_SEPARATOR.'content_title';
+
         if ($this->commentsModule) {
-            $content = $this->commentsModule->htmlMailContentTitle;
-        } else {
-            $content = 'email'.DIRECTORY_SEPARATOR.'content_title';
+            if (is_array($this->commentsModule->htmlMailContentTitle)) {
+                $contextModelClassName = $model->className();
+                if (!empty($this->commentsModule->htmlMailContentTitle[$contextModelClassName])) {
+                    $content = $this->commentsModule->htmlMailContentTitle[$contextModelClassName];
+                } else {
+                    $content = $this->commentsModule->htmlMailContentTitleDefault;
+                }
+            } else {
+                $content = $this->commentsModule->htmlMailContentTitle;
+            }
         }
 
         $ris = $this->appController->renderMailPartial($content,
@@ -280,6 +327,8 @@ class PartecipantsNotification extends Object
                 $contextModelClassName = $contextModel->className();
                 if (!empty($this->commentsModule->htmlMailContent[$contextModelClassName])) {
                     $content = $this->commentsModule->htmlMailContent[$contextModelClassName];
+                } else {
+                    $content = $this->commentsModule->htmlMailContentDefault;
                 }
             } else {
                 $content = $this->commentsModule->htmlMailContent;

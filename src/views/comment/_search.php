@@ -1,21 +1,21 @@
 <?php
 
 /**
- * Lombardia Informatica S.p.A.
+ * Aria S.p.A.
  * OPEN 2.0
  *
  *
- * @package    lispa\amos\comments\views\comment
+ * @package    open20\amos\comments\views\comment
  * @category   CategoryName
  */
 
-use lispa\amos\comments\AmosComments;
-use lispa\amos\core\helpers\Html;
+use open20\amos\comments\AmosComments;
+use open20\amos\core\helpers\Html;
 use yii\widgets\ActiveForm;
 
 /**
  * @var \yii\web\View $this
- * @var \lispa\amos\comments\models\search\CommentSearch $model
+ * @var \open20\amos\comments\models\search\CommentSearch $model
  * @var \yii\widgets\ActiveForm $form
  */
 
