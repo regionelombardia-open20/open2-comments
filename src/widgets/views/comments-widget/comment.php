@@ -53,9 +53,7 @@ ModalUtility::createAlertModal([
 
 <div id="comments_contribute" class="contribute col-xs-12 nop">
     <?php if (Yii::$app->getUser()->can('COMMENT_CREATE', ['model' => $widget->model])) { ?>
-
         <?php
-
         $displayNotifyCheckBox = true;
 
         if (isset($commentsModule->displayNotifyCheckbox)) {
@@ -127,31 +125,39 @@ ModalUtility::createAlertModal([
                 'title' => AmosComments::t('amoscomments', 'Comment content')]),
             ['class' => 'col-xs-12 text-right m-t-15 nop']
         );
-        if(!isset(Yii::$app->params['isPoi']) || !($widget->model->className() == News::className() && $widget->model->id == 3126))
-	{
+        if (!isset(Yii::$app->params['isPoi']) || !($widget->model->className() == News::className() && $widget->model->id == 3126)) {
+            ?>
+
+            <?= AccordionWidget::widget([
+                'items' => [
+                    [
+                        'header' => AmosIcons::show('comments') . $widget->options['commentTitle'],
+                        'content' => $redactorComment . $attachmComment . $btnComment
+                    ]
+                ],
+                'headerOptions' => ['tag' => 'h2'],
+                'clientOptions' => [
+                    'collapsible' => true,
+                    'active' => $openAccordion, // set integer 0 for active on load view
+                    'icons' => [
+                        'header' => 'ui-icon-amos am am-plus-square',
+                        'activeHeader' => 'ui-icon-amos am am-minus-square',
+                    ]
+                ],
+                'options' => [
+                    'class' => (empty($commentsModule->layoutInverted) || $commentsModule->layoutInverted == false) ? 'first-accordion' : ''
+                ]
+            ]);
+        } ?>
+
+        <?php
+        if (\Yii::$app->request->get('urlRedirect') && (
+             strpos(\Yii::$app->request->get('urlRedirect'), \Yii::$app->params['platform']['frontendUrl']) !== false
+            ||strpos(\Yii::$app->request->get('urlRedirect'), \Yii::$app->params['platform']['backendUrl']) !== false
+            )
+        ) {
+            echo Html::hiddenInput('urlRedirect', \Yii::$app->request->get('urlRedirect'),['id' => 'url-redirect']);
+        }
         ?>
-
-        <?= AccordionWidget::widget([
-            'items' => [
-                [
-                    'header' => AmosIcons::show('comments') . $widget->options['commentTitle'],
-                    'content' => $redactorComment . $attachmComment . $btnComment
-                ]
-            ],
-            'headerOptions' => ['tag' => 'h2'],
-            'clientOptions' => [
-                'collapsible' => true,
-                'active' => $openAccordion, // set integer 0 for active on load view
-                'icons' => [
-                    'header' => 'ui-icon-amos am am-plus-square',
-                    'activeHeader' => 'ui-icon-amos am am-minus-square',
-                ]
-            ],
-            'options' => [
-                'class' => (empty($commentsModule->layoutInverted) || $commentsModule->layoutInverted == false) ? 'first-accordion' : ''
-            ]
-        ]); 
-        }?>
-
     <?php } ?>
 </div>

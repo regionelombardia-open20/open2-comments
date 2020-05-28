@@ -82,6 +82,10 @@ Comments.saveComment = function (context_id, context, csrfKey, csrfValue) {
                 if (response.error) {
                     alert(response.error.msg);
                 } else {
+                    var urlRedirect = $('#url-redirect').val();
+                    if(urlRedirect != '' && urlRedirect != undefined){
+                        window.location.href = urlRedirect;
+                    }
                     Comments.reloadComments();
                     comment_textarea.val('');
                     Comments.emptyRedactorEditor(comment_textarea.attr('id'));

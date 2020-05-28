@@ -43,7 +43,7 @@ class Comment extends \open20\amos\comments\models\base\Comment
      * @var File[] $commentAttachmentsForItemView
      */
     public $commentAttachmentsForItemView;
-
+    
 
     /**
      * @see \yii\db\BaseActiveRecord::init() for more info.
@@ -140,11 +140,14 @@ class Comment extends \open20\amos\comments\models\base\Comment
     /**
      * @inheritdoc
      */
-    public function afterSave($insert, $changedAttributes)
-    {
+    public function afterSave($insert, $changedAttributes) {
         parent::afterSave($insert, $changedAttributes);
-        if($insert) {
-            $this->saveNotificationForContextModel();
+        
+        $module = \Yii::$app->getModule('comments');
+        if (!empty($module->enableNotifyCommentForDiscussions) && $module->enableNotifyCommentForDiscussions == true) {
+            if ($insert) {
+                $this->saveNotificationForContextModel();
+            }
         }
     }
 

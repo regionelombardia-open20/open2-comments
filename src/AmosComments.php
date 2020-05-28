@@ -121,6 +121,12 @@ class AmosComments extends AmosModule implements ModuleInterface, BootstrapInter
     public $disableAutoDisplay         = ['amos\planner\models\PlanWork'];
 
     /**
+     * If a true notify the context model (DiscussioniTopic) if is created a comment
+     * @var bool $enableNotifyCommentForDiscussions
+     */
+    public $enableNotifyCommentForDiscussions = true;
+
+    /**
      *
      * @var type 3 by SORT_DESC, 4 by SORT_ASC
      */
