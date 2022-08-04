@@ -12,7 +12,9 @@ namespace open20\amos\comments\base;
 
 use open20\amos\comments\AmosComments;
 use open20\amos\comments\models\Comment;
+use open20\amos\comments\models\CommentNotification;
 use open20\amos\comments\models\CommentReply;
+use open20\amos\comments\utility\CommentsUtility;
 use open20\amos\core\controllers\CrudController;
 use open20\amos\core\interfaces\ModelLabelsInterface;
 use open20\amos\core\record\Record;
@@ -21,6 +23,9 @@ use open20\amos\core\utilities\Email;
 use Yii;
 use yii\base\BaseObject;
 use yii\helpers\ArrayHelper;
+use open20\amos\comments\models\CommentNotificationUsers;
+use open20\amos\admin\models\UserProfile;
+use yii\helpers\VarDumper;
 
 /**
  * Class PartecipantsNotification
@@ -57,12 +62,6 @@ class PartecipantsNotification extends BaseObject
     {
         $model_reply = null;
 
-        if (!empty($this->commentsModule)) {
-            if (!$this->commentsModule->enableMailsNotification) {
-                return;
-            }
-        }
-
         $model = $comment;
         if ($comment instanceof CommentReply) {
             $model       = $comment->comment;
@@ -76,7 +75,56 @@ class PartecipantsNotification extends BaseObject
 
         $users = $this->getRecipients($contextModel, $contextModelClassName);
 
+        foreach($users as $user) {
+            $notification = new CommentNotification();
+            $notification->user_id = $user;
+            $notification->model_class_name = get_class($model);
+            $notification->model_id = $model->id;
+            $notification->context_model_class_name = $contextModelClassName;
+            $notification->context_model_id = $model->context_id;
+            $notification->read = false;
+            $notification->save();
+        }
+
+        if (!empty($this->commentsModule)) {
+            if (!$this->commentsModule->enableMailsNotification) {
+                return;
+            }
+        }
+
         $this->sendEmail($users, $contextModel, $model, $model_reply);
+    }
+
+
+    /**
+     * Method to exclude users when notification taggin user in content is disabled
+     * notify_tagging_user_in_content = 0
+     *
+     * @param array | custom type list | $users
+     * @param model | open20\amos\comments\models\base\Comment | $comment
+     *
+     * @return array | custom type list | $users
+     */
+    private function extractTagginNotificationUsers($users, $comment){
+
+        // get all taggin users from comment text
+        $users_taggin_id = Record::getMentionUserIdFromText($comment->comment_text);
+
+        // extract all user where notify_tagging_user_in_content is disabled and is mention in text
+        $users_id = ArrayHelper::getColumn(
+                UserProfile::find()
+                    ->select('user_id')
+                    ->andWhere(["notify_tagging_user_in_content" => 1])
+                    ->andWhere(["id" => $users_taggin_id])
+                    ->asArray()
+                    ->all(),
+
+            function ($element) {
+                return $element['user_id'];
+            }
+        );
+
+        return $users_id;
     }
 
     /**
@@ -87,18 +135,26 @@ class PartecipantsNotification extends BaseObject
      */
     protected function getRecipients($contextModel, $contextModelClassName)
     {
-        $users = $this->getDiscussionsRecipients($contextModel);
+        if (in_array($contextModelClassName, AmosComments::instance()->bellNotificationEnabledClasses)) {
 
-        if (empty($users) && method_exists($contextModel, 'getRecipients')) {
-            $users = $contextModel->getRecipients();
+            // if exist override of getRecipients on $contextModel use this method!
+            if (method_exists($contextModel, 'getRecipients')) {
+                $users = $contextModel->getRecipients();
+            } else {
+                $users = CommentsUtility::getAllCommentNotificationUserEnabled($contextModelClassName, $contextModel->id);
+            }
+
+        } else {
+            $users = $this->getDiscussionsRecipients($contextModel);
+
+            if (empty($users) && method_exists($contextModel, 'getRecipients')) {
+                $users = $contextModel->getRecipients();
+            }
+
+            if (empty($users)) {
+                $users = $this->getDefaultRecipients($contextModel, $contextModelClassName);
+            }
         }
-
-        if (empty($users)) {
-            $users = $this->getDefaultRecipients($contextModel, $contextModelClassName);
-        }
-
-
-
 
         return $users;
     }

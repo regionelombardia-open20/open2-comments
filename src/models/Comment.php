@@ -38,12 +38,12 @@ class Comment extends \open20\amos\comments\models\base\Comment
      * @var File[] $commentAttachments
      */
     private $commentAttachments;
-    
+
     /**
      * @var File[] $commentAttachmentsForItemView
      */
     public $commentAttachmentsForItemView;
-    
+
 
     /**
      */
@@ -70,7 +70,7 @@ class Comment extends \open20\amos\comments\models\base\Comment
             ],
         ]);
     }
-    
+
     /**
      * @inheritdoc
      */
@@ -87,7 +87,7 @@ class Comment extends \open20\amos\comments\models\base\Comment
             [['commentAttachments'], 'file', 'maxFiles' => $maxCommentAttachments],
         ]);
     }
-    
+
     /**
      * @inheritdoc
      */
@@ -97,7 +97,7 @@ class Comment extends \open20\amos\comments\models\base\Comment
             'commentAttachments' => AmosComments::t('amoscomments', '#COMMENT_ATTACHMENTS'),
         ]);
     }
-    
+
     /**
      * Getter for $this->attachments;
      *
@@ -126,7 +126,11 @@ class Comment extends \open20\amos\comments\models\base\Comment
         }
         return $this->commentAttachmentsForItemView;
     }
-    
+
+    public function getContextObject() {
+        return $this->hasOne($this->context, ['id' => 'context_id']);
+    }
+
     /**
      * @inheritdoc
      */
@@ -141,13 +145,35 @@ class Comment extends \open20\amos\comments\models\base\Comment
      */
     public function afterSave($insert, $changedAttributes) {
         parent::afterSave($insert, $changedAttributes);
-        
+
         $module = \Yii::$app->getModule('comments');
         if (!empty($module->enableNotifyCommentForDiscussions) && $module->enableNotifyCommentForDiscussions == true) {
             if ($insert) {
                 $this->saveNotificationForContextModel();
             }
         }
+    }
+
+    public function beforeDelete() {
+        $commentReplies = $this->commentReplies;
+        if (!empty($commentReplies)) {
+            foreach ($commentReplies as $commentReply) {
+                CommentNotification::deleteAll(
+                    ['and',
+                        ['model_class_name' => get_class($commentReply)],
+                        ['model_id' => $commentReply->id],
+                    ]
+                );
+            }
+        }
+        CommentNotification::deleteAll(
+            ['and',
+                ['model_class_name' => get_class($this)],
+                ['model_id' => $this->id],
+            ]
+        );
+
+        return parent::beforeDelete();
     }
 
     /**

@@ -20,6 +20,7 @@ use open20\amos\core\icons\AmosIcons;
 use open20\amos\core\utilities\ModalUtility;
 use yii\web\View;
 use open20\amos\news\models\News;
+use yii\helpers\Url;
 
 CommentsAsset::register($this);
 
@@ -72,6 +73,10 @@ ModalUtility::createAlertModal([
             }
         }
 
+            
+        $scope = \open20\amos\cwh\AmosCwh::getInstance()->getCwhScope();
+        $tags = [];
+
         $redactorComment = Html::tag(
             'div',
             Html::tag('div',
@@ -86,6 +91,12 @@ ModalUtility::createAlertModal([
                     ],
                     'clientOptions' => [
                         'placeholder' => $widget->options['commentPlaceholder'],
+                        'mentions' => [
+                            'url' => Url::to(['/admin/user-profile/find-name-user-by-cwh', 
+                                        'className' => $widget->model::className(),
+                                        'model_id' => $widget->model->id,
+                                    ])
+                        ]
                     ],
                 ]) .
                 $this->render('_send_notify_checkbox', [

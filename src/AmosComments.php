@@ -16,8 +16,11 @@ use open20\amos\comments\models\CommentReply;
 use open20\amos\core\components\AmosView;
 use open20\amos\core\module\AmosModule;
 use open20\amos\core\module\ModuleInterface;
+use open20\amos\core\record\Record;
 use yii\base\BootstrapInterface;
 use yii\base\Event;
+use yii\db\ActiveRecord;
+use yii\helpers\VarDumper;
 
 /**
  * Class AmosComments
@@ -139,6 +142,18 @@ class AmosComments extends AmosModule implements ModuleInterface, BootstrapInter
     public $disablePagination = false;
 
     /**
+     *  Example:
+     * [
+     *  'open20\amos\documenti\models\Documenti',
+     *  'open20\amos\news\models\News',
+     *  'open20\amos\discussioni\models\Discussioni',
+     * ]
+     *
+     * @var boolean
+     */
+    public $bellNotificationEnabledClasses = [];
+
+    /**
      * @return string
      */
     public static function getModuleName()
@@ -187,6 +202,13 @@ class AmosComments extends AmosModule implements ModuleInterface, BootstrapInter
     public function bootstrap($app)
     {
         Event::on(AmosView::className(), AmosView::AFTER_RENDER_CONTENT, [new CommentComponent(), 'showComments']);
+
+        if (!empty($this->bellNotificationEnabledClasses) && is_array($this->bellNotificationEnabledClasses)){
+            foreach ($this->bellNotificationEnabledClasses as $modelClassName){
+                Event::on($modelClassName, Record::EVENT_AFTER_INSERT, [new CommentComponent(), 'addCreatorEnableNotificationUser']);
+            }
+        }
+
     }
 
     /**

@@ -10,8 +10,10 @@
 
 namespace open20\amos\comments\widgets;
 
+use open20\amos\comments\models\CommentNotificationUsers;
 use open20\amos\comments\AmosComments;
 use open20\amos\comments\models\Comment;
+use open20\amos\comments\utility\CommentsUtility;
 use yii\base\Widget;
 use yii\data\Pagination;
 
@@ -158,6 +160,16 @@ class CommentsWidget extends Widget
             $pages->setPageSize(5);
             $comments = $query->offset($pages->offset)->limit($pages->limit)->all();
         }
+
+        // check if notification bell is enabled or not for this user:
+        $notificationUserStatus = CommentsUtility::getCommentNotificationUserStatus(
+                $this->model::className(),
+                $this->model->id,
+                \Yii::$app->user->id
+            );
+
+        CommentsUtility::setCommentNotificationsAsRead($this->model::className(), $this->model->id, \Yii::$app->user->id);
+
         if (property_exists(get_class($this->model), 'bootstrapItalia') && $this->model->bootstrapItalia == true) {
             return $this->render('bootstrapitalia/comments',
                     [
@@ -175,7 +187,9 @@ class CommentsWidget extends Widget
                     'pages' => $pages,
                     'comments' => $comments,
                     'lastComment' => $lastComment,
+                    'notificationUserStatus' => $notificationUserStatus
             ]);
         }
     }
+
 }

@@ -14,7 +14,7 @@ return [
     '#AJAX_ERROR_COMMENT_REPLY' => "Error while adding comment reply",
     'Attachments' => 'Attachments',
     '#ATTACHMENTS' => 'Attachments',
-    '#checkbox_send_notify' => 'Send notify',
+    '#checkbox_send_notify' => 'Send notification to all participants in the discussion',
     'Close' => 'Close',
     'Commentable Context' => 'Commentable Context',
     '#COMMENT_ATTACHMENTS' => 'Comment attachments',
@@ -76,4 +76,9 @@ return [
     'Validation errors! Check the data entered.' => 'Validation errors! Check the data entered.',
     'Write a comment' => 'Write a comment',
     'Write a reply' => 'Write a reply',
+    '#able-notify' => 'Your comments notifications for this content are active.',
+    '#disable-notify-link' => 'Disable notify',
+    '#disable-notify'=> 'Your comments notifications for this content are deactivated.',
+    '#able-notify-link' => 'Enable again!',
+    "#email_subject_tagging_user" => "You have been mentioned in a content about EROI"
 ];
