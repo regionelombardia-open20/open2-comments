@@ -14,7 +14,7 @@ return [
     '#AJAX_ERROR_COMMENT_REPLY' => "Errore durante l'aggiunta della risposta al commento",
     'Attachments' => 'Allegati',
     '#ATTACHMENTS' => 'Allegati',
-    '#checkbox_send_notify' => 'Invia notifica a tutti i partecipanti alla discussione',
+    '#checkbox_send_notify' => 'Invia notifica',
     'Close' => 'Chiudi',
     'Commentable Context' => 'Contesto Commentabile',
     '#COMMENT_ATTACHMENTS' => 'Allegati del commento',
@@ -76,9 +76,4 @@ return [
     'Validation errors! Check the data entered.' => 'Errore di validazione! Controllare i dati immessi.',
     'Write a comment' => 'Scrivi un commento',
     'Write a reply' => 'Scrivi una risposta',
-    '#able-notify'=> 'Le tue notifiche ai commenti per questo contenuto sono attive.',
-    '#disable-notify-link' => 'Disattiva notifiche',
-    '#disable-notify'=> 'Le tue notifiche ai commenti per questo contenuto sono disattive.',
-    '#able-notify-link' => 'Attivale di nuovo!',
-    "#email_subject_tagging_user" => "Sei stato menzionato in un contenuto su EROI"
 ];

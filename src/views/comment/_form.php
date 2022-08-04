@@ -41,18 +41,13 @@ $commentsModule = Yii::$app->getModule(AmosComments::getModuleName());
                 'enctype' => 'multipart/form-data'
             ]
     ]);
-    ?>
+    ?>  
 
     <div class="row">
         <?php if (!empty($no_attach)) { ?>
             <div class="col-lg-12 col-xs-12">
                 <?=
-                $form->field($model, 'comment_text')->widget(TextEditorWidget::className(),
-                    [
-                    'clientOptions' => [
-                        'lang' => substr(Yii::$app->language, 0, 2)
-                    ]
-                ])
+                $form->field($model, 'comment_text')->textarea(['rows' => '6']);
                 ?>
             </div>
         <?php } else { ?>
@@ -61,11 +56,17 @@ $commentsModule = Yii::$app->getModule(AmosComments::getModuleName());
                 $form->field($model, 'comment_text')->widget(TextEditorWidget::className(),
                     [
                     'clientOptions' => [
-                        'lang' => substr(Yii::$app->language, 0, 2)
+                        'lang' => substr(Yii::$app->language, 0, 2),
+                        'plugins' => [
+                            "paste link",
+                        ],
+                        'toolbar' => "undo redo | link",
                     ]
                 ])
                 ?>
             </div>
+
+            <?php if ($commentsModule->modelCanDoIt($class, 'enableUserSendAttachment')) : ?>
             <div class="col-lg-4 col-xs-12">
                 <?=
                 AttachmentsWidget::widget([
@@ -82,10 +83,11 @@ $commentsModule = Yii::$app->getModule(AmosComments::getModuleName());
                 ])
                 ?>
             </div>
+            <?php endif; ?>
         <?php } ?>
     </div>
 
-    <?php if ($commentsModule->enableUserSendMailCheckbox && (Yii::$app->controller->action->id == 'create')): ?>
+    <?php if ($commentsModule->enableUserSendMailCheckbox && $commentsModule->modelCanDoIt($class, 'enableUserSendMailCheckbox') && (Yii::$app->controller->action->id == 'create')): ?>
         <div class="row">
             <div class="col-xs-12">
                 <?=

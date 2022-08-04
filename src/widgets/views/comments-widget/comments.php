@@ -22,7 +22,6 @@ use open20\amos\core\views\AmosLinkPager;
 use yii\web\View;
 use yii\widgets\Pjax;
 use open20\amos\news\models\News;
-use yii\helpers\Url;
 
 $asset = CommentsAsset::register($this);
 
@@ -31,7 +30,6 @@ $asset = CommentsAsset::register($this);
  * @var \open20\amos\comments\models\Comment[] $comments
  * @var \open20\amos\comments\models\CommentReply[] $commentReplies
  * @var \yii\data\Pagination $pages
- * @var boolean|null $notificationUserStatus
  */
 $js = <<<JS
     $('#comments_anchor').on('click', '.reply-to-comment', function (event) {
@@ -47,6 +45,8 @@ $js = <<<JS
 JS;
 $this->registerJs($js, View::POS_READY);
 
+$class= $widget->model->className();
+
 /** @var AmosComments $commentsModule */
 $commentsModule = Yii::$app->getModule(AmosComments::getModuleName());
 
@@ -60,12 +60,14 @@ ModalUtility::createAlertModal([
 ]);
 
 $displayNotifyCheckBox = true;
-
+$contextObject         = null;
 if (isset($commentsModule->displayNotifyCheckbox)) {
     if (is_bool($commentsModule->displayNotifyCheckbox)) {
         $displayNotifyCheckBox = $commentsModule->displayNotifyCheckbox;
     }
 }
+
+$displayNotifyCheckBox = $displayNotifyCheckBox && $commentsModule->modelCanDoIt($class, 'displayNotifyCheckbox');
 ?>
 
 <div id="comments-loader" class="text-center hidden">
@@ -83,55 +85,27 @@ if (isset($commentsModule->displayNotifyCheckbox)) {
     ]);
     ?>
 
+    <?=
+    (!empty($comments)) ? Html::tag('h2', $widget->options['lastCommentsTitle'], ['class' => 'subtitle-comments']) : ''
+    ?>
+    <?php
+    $url = \Yii::$app->params['platform']['backendUrl'].'/img/img_default.jpg';
 
-    <div class="subtitle-comments">
-        <h2 class="m-r-5"><?= $widget->options['lastCommentsTitle'] ?> </h2>
-        <div class="subtitle-text-container">
+    $baseUrl    = ((basename(Yii::getAlias('@app')) == 'backend') ? (!empty(\Yii::$app->params['platform']['backendUrl'])
+            ? \Yii::$app->params['platform']['backendUrl'] : "") : (!empty(\Yii::$app->params['platform']['frontendUrl'])
+            ? \Yii::$app->params['platform']['frontendUrl'] : ""));
+    $currentUrl = str_replace('view?', 'public?', \yii\helpers\Url::current());
+    foreach ($comments as $comment):
+        if (empty($contextObject)) {
+            $classContext  = $comment->context;
+            $contextObject = $classContext::findOne($comment->context_id);
 
-            <?php
-            if (in_array($widget->model->className(), AmosComments::instance()->bellNotificationEnabledClasses)):
-                if ($notificationUserStatus):
-                    $callToAction = Url::toRoute([
-                        '/comments/comment/comment-notification-user',
-                        'context' => $widget->model->className(),
-                        'contextId' => $widget->model->id,
-                        'enable' => 0,
-                    ]);
-                    ?>
-                    <a class="icon-link-black" href="<?= $callToAction ?>" title="Notifiche abilitate, clicca qui per disabilitarle">
-                        <span class="am am-notifications-add m-r-5" style="font-size: 24px;"></span>
-                    </a>
-
-                    <span class="m-r-5"> <?= AmosComments::t('amoscomments', '#able-notify') ?></span>
-                    <a href="<?= $callToAction ?>" title="Notifiche abilitate, clicca qui per disabilitarle"> <?= AmosComments::t('amoscomments', '#disable-notify-link') ?></a>
-                    <?php
-                else:
-                    $callToAction = Url::toRoute([
-                        '/comments/comment/comment-notification-user',
-                        'context' => $widget->model->className(),
-                        'contextId' => $widget->model->id,
-                        'enable' => 1,
-                    ]);
-                    ?>
-                    <a class="icon-link-black" href="<?= $callToAction ?>" title="Notifiche disabilitate, clicca qui per abilitarle">
-                        <svg class="m-r-5" style="width:24px;height:24px" viewBox="0 0 24 24">
-                            <path fill="currentColor" d="M17.5 13A4.5 4.5 0 0 0 13 17.5A4.5 4.5 0 0 0 17.5 22A4.5 4.5 0 0 0 22 17.5A4.5 4.5 0 0 0 17.5 13M17.5 14.5A3 3 0 0 1 20.5 17.5A3 3 0 0 1 20.08 19L16 14.92A3 3 0 0 1 17.5 14.5M14.92 16L19 20.08A3 3 0 0 1 17.5 20.5A3 3 0 0 1 14.5 17.5A3 3 0 0 1 14.92 16M12 2C10.9 2 10 2.9 10 4C10 4.1 10 4.19 10 4.29C7.12 5.14 5 7.82 5 11V17L3 19V20H11.5A6.5 6.5 0 0 1 11 17.5A6.5 6.5 0 0 1 17.5 11A6.5 6.5 0 0 1 19 11.18V11C19 7.82 16.88 5.14 14 4.29C14 4.19 14 4.1 14 4C14 2.9 13.11 2 12 2M10 21C10 22.11 10.9 23 12 23C12.5 23 12.97 22.81 13.33 22.5A6.5 6.5 0 0 1 12.03 21Z" />
-                        </svg>
-                    </a>
-
-                    <span class="m-r-5"> <?= AmosComments::t('amoscomments', '#disable-notify') ?></span>
-                    <a href="<?=$callToAction ?>" title="Notifiche disabilitate, clicca qui per abilitarle"> <?= AmosComments::t('amoscomments', '#able-notify-link') ?></a>
-
-                <?php
-                endif;
-            endif;
-            ?>
-
-        </div>
-    </div>
-
-
-    <?php foreach ($comments as $comment): ?>
+            $image = open20\amos\comments\models\Comment::getImageContext($contextObject);
+            if (!is_null($image)) {
+                $url = \Yii::$app->params['platform']['backendUrl'].$image->getWebUrl('square_large', false, true);
+            }
+        }
+        ?>
         <?php /** @var \open20\amos\comments\models\Comment $comment */ ?>
         <div class="answer col-xs-12 nop media">
             <div class="media-left">
@@ -139,54 +113,59 @@ if (isset($commentsModule->displayNotifyCheckbox)) {
             </div>
             <div class="answer-details media-body">
                 <div class="col-xs-10 nop">
-                    <h4>
-                        <?php
-                        if (isset(\Yii::$app->params['disableLinkContentCreator']) && (\Yii::$app->params['disableLinkContentCreator'] === true)):
-                            echo $comment->createdUserProfile;
-                        else: ?>
-                            <?=
-                            Html::a($comment->createdUserProfile,
-                                ['/admin/user-profile/view', 'id' => $comment->createdUserProfile->id])
-                            ?>
-                            <?php
-                        endif;
-                        ?>
-                    </h4>
+                    <h4><?=
+                        Html::a($comment->createdUserProfile,
+                            ['/admin/user-profile/view', 'id' => $comment->createdUserProfile->id])
+                        ?></h4>
                     <p> <?= Yii::$app->getFormatter()->asDatetime($comment->created_at) ?></p>
                 </div>
-                    <?php if ($widget->model->hasMethod('getCloseCommentThread') && !$widget->model->getCloseCommentThread()) : ?>
-                        <?=
-                        ContextMenuWidget::widget([
-                            'model' => $comment,
-                            'actionModify' => "/" . AmosComments::getModuleName() . "/comment/update?id=" . $comment->id,
-                            'actionDelete' => "/" . AmosComments::getModuleName() . "/comment/delete?id=" . $comment->id,
-                            'mainDivClasses' => 'nop col-sm-1 col-xs-2 pull-right'
-                        ])
-                        ?>
-                    <?php endif; ?>
+                <?php if ($widget->model->hasMethod('getCloseCommentThread') && !$widget->model->getCloseCommentThread()) : ?>
+                    <?=
+                    ContextMenuWidget::widget([
+                        'model' => $comment,
+                        'actionModify' => "/".AmosComments::getModuleName()."/comment/update?id=".$comment->id,
+                        'actionDelete' => "/".AmosComments::getModuleName()."/comment/delete?id=".$comment->id,
+                        'mainDivClasses' => 'nop col-sm-1 col-xs-2 pull-right'
+                    ])
+                    ?>
+                <?php endif; ?>
                 <div class="clearfix"></div>
                 <p class="answer_text"><?= Yii::$app->getFormatter()->asRaw($comment->comment_text) ?></p>
-                <?php $commentAttachments = $comment->getCommentAttachmentsForItemView(); ?>
-                <?php if (count($commentAttachments) > 0):if ($widget->model->hasMethod('getCloseCommentThread') && $widget->model->getCloseCommentThread()) :
-                                        ?> 
-                                        <?=
-                                        AttachmentsTable::widget([
-                                            'model' => $comment,
-                                            'attribute' => 'commentAttachments',
-                                            'viewDeleteBtn' => false,
-                                        ])
-                                        ?>
-                                    <?php else: ?> 
 
-                                        <?=
-                                        AttachmentsTable::widget([
-                                            'model' => $comment,
-                                            'attribute' => 'commentAttachments',
-                                        ])
-                                        ?>
-                                    <?php endif;
-                                endif;
-                                ?>
+                <?=
+                \open20\amos\core\forms\editors\socialShareWidget\SocialShareWidget::widget([
+                    'mode' => \open20\amos\core\forms\editors\socialShareWidget\SocialShareWidget::MODE_NORMAL,
+                    'configuratorId' => 'socialShare',
+                    'model' => $comment,
+                    'url' => \yii\helpers\Url::to($baseUrl.$currentUrl, true),                 
+                    'description' => '"'.$comment->comment_text.'"',
+                    'imageUrl' => $url,
+                    'isComment' => true,
+                ]);
+                ?>
+                <?php $commentAttachments = $comment->getCommentAttachmentsForItemView(); ?>
+                <?php
+                if (count($commentAttachments) > 0):if ($widget->model->hasMethod('getCloseCommentThread') && $widget->model->getCloseCommentThread()) :
+                        ?>
+                        <?=
+                        AttachmentsTable::widget([
+                            'model' => $comment,
+                            'attribute' => 'commentAttachments',
+                            'viewDeleteBtn' => false,
+                        ])
+                        ?>
+                    <?php else: ?>
+
+                        <?=
+                        AttachmentsTable::widget([
+                            'model' => $comment,
+                            'attribute' => 'commentAttachments',
+                        ])
+                        ?>
+                    <?php
+                    endif;
+                endif;
+                ?>
                 <div class="answer-action">
                     <?php
                     $module       = \Yii::$app->getModule('comments');
@@ -196,7 +175,7 @@ if (isset($commentsModule->displayNotifyCheckbox)) {
                         if (!is_null($moduleCwh)) {
                             $scope = $moduleCwh->getCwhScope();
                             if (!isset($scope['community'])) {
-                                $replyComment = false; 
+                                $replyComment = false;
                             }
                         }
                     }
@@ -204,33 +183,34 @@ if (isset($commentsModule->displayNotifyCheckbox)) {
                         if (!isset(Yii::$app->params['isPoi']) || !($widget->model->className() == News::className() && $widget->model->id
                             == 3126)) {
                             ?>
-                                <?php if ($widget->model->hasMethod('getCloseCommentThread') && !$widget->model->getCloseCommentThread()) : ?>
-                                    <?=
-                                    Html::a(
-                                            AmosComments::t('amoscomments', 'Reply'), 'javascript:void(0);',
-                                            [
-                                                'class' => 'underline bold reply-to-comment',
-                                                'title' => AmosComments::t('amoscomments', 'Reply to comment'),
-                                                'data-comment_id' => $comment->id
-                                    ])
-                                    ?>
-                                    <?php
-                                endif;
-                            }
+                            <?php if ($widget->model->hasMethod('getCloseCommentThread') && !$widget->model->getCloseCommentThread()) :
+                                ?>
+                                <?=
+                                Html::a(
+                                    AmosComments::t('amoscomments', 'Reply'), 'javascript:void(0);',
+                                    [
+                                    'class' => 'underline bold reply-to-comment',
+                                    'title' => AmosComments::t('amoscomments', 'Reply to comment'),
+                                    'data-comment_id' => $comment->id
+                                ])
+                                ?>
+                                <?php
+                            endif;
                         }
-                        ?>
+                    }
+                    ?>
                 </div>
                 <?php if ($replyComment) { ?>
                     <div id="bk-comment-reply-<?= $comment->id ?>" class="comment-reply-container hidden">
                         <?php
                         if (Yii::$app->getUser()->can('COMMENT_CREATE', ['model' => $comment])) {
                             ?>
-                         <?php if ($widget->model->hasMethod('getCloseCommentThread') && !$widget->model->getCloseCommentThread()) : ?>
-                            <?=
-                            Html::label(AmosComments::t('amoscomments', 'Reply'), 'comment-reply-area-'.$comment->id,
-                                ['class' => 'sr-only'])
-                            ?>
-                        <?php endif; ?>
+                            <?php if ($widget->model->hasMethod('getCloseCommentThread') && !$widget->model->getCloseCommentThread()) : ?>
+                                <?=
+                                Html::label(AmosComments::t('amoscomments', 'Reply'),
+                                    'comment-reply-area-'.$comment->id, ['class' => 'sr-only'])
+                                ?>
+                            <?php endif; ?>
                         <?php } ?>
                         <?=
                         TextEditorWidget::widget([
@@ -250,6 +230,7 @@ if (isset($commentsModule->displayNotifyCheckbox)) {
                             ]
                         ])
                         ?>
+                        <?php if ($commentsModule->modelCanDoIt($class, 'enableUserSendAttachment')) : ?>
                         <?=
                         AttachmentsInput::widget([
                             'id' => 'commentReplyAttachments'.$comment->id,
@@ -264,6 +245,7 @@ if (isset($commentsModule->displayNotifyCheckbox)) {
                             ]
                         ])
                         ?>
+                    <?php endif; ?>
                         <?=
                         $this->render('_send_notify_checkbox',
                             [
@@ -277,14 +259,14 @@ if (isset($commentsModule->displayNotifyCheckbox)) {
                         <div class="clearfix"></div>
                         <div class="clear"></div>
                         <div class="bk-elementActions pull-right">
-                             <?php if ($widget->model->hasMethod('getCloseCommentThread') && !$widget->model->getCloseCommentThread()) : ?>
+                            <?php if ($widget->model->hasMethod('getCloseCommentThread') && !$widget->model->getCloseCommentThread()) : ?>
                                 <?=
                                 Html::button(AmosComments::t('amoscomments', 'Reply'),
-                                        [
-                                            'id' => 'comment-reply-btn-' . $comment->id,
-                                            'class' => 'btn btn-navigation-primary comment-reply-btn-class',
-                                            'title' => AmosComments::t('amoscomments', 'Reply'),
-                                            'data-comment_id' => $comment->id
+                                    [
+                                    'id' => 'comment-reply-btn-'.$comment->id,
+                                    'class' => 'btn btn-navigation-primary comment-reply-btn-class',
+                                    'title' => AmosComments::t('amoscomments', 'Reply'),
+                                    'data-comment_id' => $comment->id
                                 ])
                                 ?>
                             <?php endif; ?>
@@ -317,8 +299,8 @@ if (isset($commentsModule->displayNotifyCheckbox)) {
                             <?=
                             ContextMenuWidget::widget([
                                 'model' => $commentReply,
-                                'actionModify' => "/" . AmosComments::getModuleName() . "/comment-reply/update?id=" . $commentReply->id,
-                                'actionDelete' => "/" . AmosComments::getModuleName() . "/comment-reply/delete?id=" . $commentReply->id,
+                                'actionModify' => "/".AmosComments::getModuleName()."/comment-reply/update?id=".$commentReply->id,
+                                'actionDelete' => "/".AmosComments::getModuleName()."/comment-reply/delete?id=".$commentReply->id,
                                 'mainDivClasses' => 'col-sm-1 col-xs-2 nop pull-right'
                             ])
                             ?>
@@ -326,39 +308,52 @@ if (isset($commentsModule->displayNotifyCheckbox)) {
                         <div class="clearfix"></div>
                         <p><?= Yii::$app->getFormatter()->asRaw($commentReply->comment_reply_text) ?></p>
                         <?php $commentReplyAttachments = $commentReply->getCommentReplyAttachmentsForItemView(); ?>
-                                <?php if (count($commentReplyAttachments) > 0):
-                                    if ($widget->model->hasMethod('getCloseCommentThread') && $widget->model->getCloseCommentThread()) :
-                                        ?> 
-                                        <?=
-                                        AttachmentsTable::widget([
-                                            'model' => $commentReply,
-                                            'attribute' => 'commentReplyAttachments',
-                                            'viewDeleteBtn' => false,
-                                        ])
-                                        ?>
-                                    <?php else: ?> 
-
-                                        <?=
-                                        AttachmentsTable::widget([
-                                            'model' => $commentReply,
-                                            'attribute' => 'commentReplyAttachments',
-                                        ])
-                                        ?>
-                                    <?php endif;
-                                endif;
+                        <?=
+                        \open20\amos\core\forms\editors\socialShareWidget\SocialShareWidget::widget([
+                            'mode' => \open20\amos\core\forms\editors\socialShareWidget\SocialShareWidget::MODE_NORMAL,
+                            'configuratorId' => 'socialShare',
+                            'model' => $commentReply,
+                            'url' => \yii\helpers\Url::to($baseUrl.$currentUrl, true),                           
+                            'description' => '"'.$commentReply->comment_reply_text.'"',
+                            'imageUrl' => $url,
+                            'isComment' => true,
+                        ]);
+                        ?>
+                        <?php
+                        if (count($commentReplyAttachments) > 0):
+                            if ($widget->model->hasMethod('getCloseCommentThread') && $widget->model->getCloseCommentThread()) :
                                 ?>
+                                <?=
+                                AttachmentsTable::widget([
+                                    'model' => $commentReply,
+                                    'attribute' => 'commentReplyAttachments',
+                                    'viewDeleteBtn' => false,
+                                ])
+                                ?>
+                            <?php else: ?>
+
+                                <?=
+                                AttachmentsTable::widget([
+                                    'model' => $commentReply,
+                                    'attribute' => 'commentReplyAttachments',
+                                ])
+                                ?>
+                            <?php
+                            endif;
+                        endif;
+                        ?>
                     </div>
                 </div>
             <?php endforeach; ?>
         </div>
     <?php endforeach; ?>
-    <?php if(!empty($pages)) { ?>
-    <?=
-    AmosLinkPager::widget([
-        'pagination' => $pages,
-        'showSummary' => true,
-    ]);
-    ?>
+    <?php if (!empty($pages)) { ?>
+        <?=
+        AmosLinkPager::widget([
+            'pagination' => $pages,
+            'showSummary' => true,
+        ]);
+        ?>
     <?php } ?>
     <?php Pjax::end(); ?>
 </div>

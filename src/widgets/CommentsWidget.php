@@ -10,10 +10,8 @@
 
 namespace open20\amos\comments\widgets;
 
-use open20\amos\comments\models\CommentNotificationUsers;
 use open20\amos\comments\AmosComments;
 use open20\amos\comments\models\Comment;
-use open20\amos\comments\utility\CommentsUtility;
 use yii\base\Widget;
 use yii\data\Pagination;
 
@@ -34,6 +32,14 @@ class CommentsWidget extends Widget
     public $model;
     public $namespaceAssetBootstrapitalia = 'amos\planner\assets\BootstrapItaliaAsset';
     public $noAttach                      = 0;
+    public $frontend = false;
+    public $layoutInverted = false;
+    public $urlRegistrazione = null;
+    public $performance = false;
+    public $defaultLimit = 10;
+    public $pageSize = 5;
+    public $useDesign = false;
+    public $moderator = false;
 
     /**
      * @var array $options Options array for the widget (ie. html options)
@@ -52,6 +58,7 @@ class CommentsWidget extends Widget
         if (!empty($module->layoutInverted) && $module->layoutInverted == true) {
             $this->layout = '<div id="comments-container">{commentsSection}{commentSection}</div>';
         }
+
         if (property_exists(get_class($this->model), 'bootstrapItalia') && $this->model->bootstrapItalia == true) {
             $this->layout = '{commentsSection}{commentSection}';
         }
@@ -127,7 +134,15 @@ class CommentsWidget extends Widget
      */
     public function commentSection()
     {
-        if (property_exists(get_class($this->model), 'bootstrapItalia') && $this->model->bootstrapItalia == true) {
+        if($this->frontend == true){
+            return $this->render('frontend/comment', [
+                    'widget' => $this
+            ]);
+        } else if($this->useDesign === true){
+            return $this->render('design/comment', [
+                    'widget' => $this
+            ]);
+        } else if (property_exists(get_class($this->model), 'bootstrapItalia') && $this->model->bootstrapItalia == true) {
             return $this->render('bootstrapitalia/comment', [
                     'widget' => $this
             ]);
@@ -144,33 +159,45 @@ class CommentsWidget extends Widget
      */
     public function commentsSection()
     {
-        $module = \Yii::$app->getModule('comments');
+        $module = \Yii::$app->getModule('comments'); 
         /** @var \yii\db\ActiveQuery $query */
         $query  = Comment::find()->andWhere(['context' => $this->model->className(), 'context_id' => $this->model->id])->orderBy([
             'created_at' => $module->orderDisplayComments]);
 
         /** @var \open20\amos\comments\models\Comment $lastComment */
-        $lastComment = $query->one();
+        $lastComment = Comment::find()->andWhere(['context' => $this->model->className(), 'context_id' => $this->model->id])->orderBy([
+            'created_at' => $module->orderDisplayComments])->limit(1)->one();
 
-        if ($module->disablePagination == true) {
+        if($this->performance == true){
+            $query->limit($this->defaultLimit);
+            $comments = $query->all();
+        } else if ($module->disablePagination == true) {
             $pages    = null;
             $comments = $query->all();
         } else {
             $pages    = new Pagination(['totalCount' => $query->count()]);
-            $pages->setPageSize(5);
+            $pages->setPageSize($this->pageSize);
             $comments = $query->offset($pages->offset)->limit($pages->limit)->all();
         }
-
-        // check if notification bell is enabled or not for this user:
-        $notificationUserStatus = CommentsUtility::getCommentNotificationUserStatus(
-                $this->model::className(),
-                $this->model->id,
-                \Yii::$app->user->id
-            );
-
-        CommentsUtility::setCommentNotificationsAsRead($this->model::className(), $this->model->id, \Yii::$app->user->id);
-
-        if (property_exists(get_class($this->model), 'bootstrapItalia') && $this->model->bootstrapItalia == true) {
+        if($this->frontend == true){
+             return $this->render('frontend/comments',
+                    [
+                    'widget' => $this,
+                    'pages' => $pages,
+                    'comments' => $comments,
+                    'lastComment' => $lastComment,
+                    'no_attach' => $this->noAttach,
+            ]);
+        } else if($this->useDesign === true){
+              return $this->render('design/comments',
+                    [
+                    'widget' => $this,
+                    'pages' => $pages,
+                    'comments' => $comments,
+                    'lastComment' => $lastComment,                    
+                    'no_attach' => $this->noAttach,
+            ]);
+        } else if (property_exists(get_class($this->model), 'bootstrapItalia') && $this->model->bootstrapItalia == true) {
             return $this->render('bootstrapitalia/comments',
                     [
                     'widget' => $this,
@@ -187,9 +214,7 @@ class CommentsWidget extends Widget
                     'pages' => $pages,
                     'comments' => $comments,
                     'lastComment' => $lastComment,
-                    'notificationUserStatus' => $notificationUserStatus
             ]);
         }
     }
-
 }

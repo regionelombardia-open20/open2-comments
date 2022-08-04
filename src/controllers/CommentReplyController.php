@@ -16,7 +16,6 @@ use open20\amos\comments\base\PartecipantsNotification;
 use open20\amos\comments\exceptions\CommentsException;
 use open20\amos\comments\models\CommentReply;
 use open20\amos\comments\models\search\CommentReplySearch;
-use open20\amos\comments\utility\CommentsUtility;
 use open20\amos\core\controllers\CrudController;
 use open20\amos\core\helpers\Html;
 use open20\amos\core\icons\AmosIcons;
@@ -190,9 +189,6 @@ class CommentReplyController extends CrudController
                 $partecipantsnotify = $this->getParticipantsNotificationInstance();
                 $partecipantsnotify->partecipantAlert($this->model);
             }
-
-            $this->enableCommentNotification($this->model->comment->context, $this->model->comment->context_id);
-
             return $this->model;
         } else {
             return [
@@ -254,32 +250,5 @@ class CommentReplyController extends CrudController
             Yii::$app->getSession()->addFlash('danger', AmosComments::t('amoscomments', 'Comment reply not found.'));
         }
         return $this->redirect(Url::previous());
-    }
-
-    /**
-     * Method to enable comment notification for auth user
-     * Enable only if comment notification user not is set!
-     *
-     * @param string|null $model_context_classname
-     * @param int|null $model_context_id
-     * @return void
-     */
-    private function enableCommentNotification(string $model_context_classname, int $model_context_id) {
-        if (!is_null($model_context_classname) && !is_null($model_context_id)) {
-
-            $model = CommentsUtility::getCommentNotificationUser(
-                $model_context_classname,
-                $model_context_id,
-                Yii::$app->user->id
-            );
-            if (empty($model)) {
-                $model = new \open20\amos\comments\models\base\CommentNotificationUsers();
-                $model->user_id =  Yii::$app->user->id;
-                $model->context_model_class_name = $model_context_classname;
-                $model->context_model_id = $model_context_id;
-                $model->enable = true;
-                $model->save(false);
-            }
-        }
     }
 }

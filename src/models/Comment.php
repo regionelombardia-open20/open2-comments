@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Aria S.p.A.
  * OPEN 2.0
@@ -44,15 +43,12 @@ class Comment extends \open20\amos\comments\models\base\Comment
      */
     public $commentAttachmentsForItemView;
 
-
     /**
      */
     public function init()
     {
         parent::init();
         $this->publicatedByLabel = AmosComments::t('amoscomments', 'Pubblicato da');
-
-
     }
 
     /**
@@ -60,14 +56,15 @@ class Comment extends \open20\amos\comments\models\base\Comment
      */
     public function behaviors()
     {
-        return ArrayHelper::merge(parent::behaviors(), [
-            'fileBehavior' => [
-                'class' => FileBehavior::className()
-            ],
-            'NotifyBehavior' => [
-                'class' => NotifyBehavior::className(),
-                'conditions' => [],
-            ],
+        return ArrayHelper::merge(parent::behaviors(),
+                [
+                'fileBehavior' => [
+                    'class' => FileBehavior::className()
+                ],
+                'NotifyBehavior' => [
+                    'class' => NotifyBehavior::className(),
+                    'conditions' => [],
+                ],
         ]);
     }
 
@@ -80,11 +77,12 @@ class Comment extends \open20\amos\comments\models\base\Comment
 
         /** @var AmosComments $commentsModule */
         $commentsModule = \Yii::$app->getModule(AmosComments::getModuleName());
-        if(isset($commentsModule)) {
+        if (isset($commentsModule)) {
             $maxCommentAttachments = $commentsModule->maxCommentAttachments;
         }
-        return ArrayHelper::merge(parent::rules(), [
-            [['commentAttachments'], 'file', 'maxFiles' => $maxCommentAttachments],
+        return ArrayHelper::merge(parent::rules(),
+                [
+                [['commentAttachments'], 'file', 'maxFiles' => $maxCommentAttachments],
         ]);
     }
 
@@ -93,8 +91,9 @@ class Comment extends \open20\amos\comments\models\base\Comment
      */
     public function attributeLabels()
     {
-        return ArrayHelper::merge(parent::attributeLabels(), [
-            'commentAttachments' => AmosComments::t('amoscomments', '#COMMENT_ATTACHMENTS'),
+        return ArrayHelper::merge(parent::attributeLabels(),
+                [
+                'commentAttachments' => AmosComments::t('amoscomments', '#COMMENT_ATTACHMENTS'),
         ]);
     }
 
@@ -104,7 +103,7 @@ class Comment extends \open20\amos\comments\models\base\Comment
      */
     public function getCommentAttachments()
     {
-        if(empty($this->commentAttachments)){
+        if (empty($this->commentAttachments)) {
             $this->commentAttachments = $this->hasMultipleFiles('commentAttachments')->one();
         }
         return $this->commentAttachments;
@@ -113,22 +112,20 @@ class Comment extends \open20\amos\comments\models\base\Comment
     /**
      * @param $attachments
      */
-    public function setCommentAttachments($attachments){
+    public function setCommentAttachments($attachments)
+    {
         $this->commentAttachments = $attachments;
     }
 
     /**
      * @return array|File[]|\yii\db\ActiveRecord[]
      */
-    public function getCommentAttachmentsForItemView(){
-        if(empty($this->commentAttachmentsForItemView)){
+    public function getCommentAttachmentsForItemView()
+    {
+        if (empty($this->commentAttachmentsForItemView)) {
             $this->commentAttachmentsForItemView = $this->hasMultipleFiles('commentAttachments')->all();
         }
         return $this->commentAttachmentsForItemView;
-    }
-
-    public function getContextObject() {
-        return $this->hasOne($this->context, ['id' => 'context_id']);
     }
 
     /**
@@ -137,13 +134,13 @@ class Comment extends \open20\amos\comments\models\base\Comment
     public function afterFind()
     {
         parent::afterFind();
-
     }
 
     /**
      * @inheritdoc
      */
-    public function afterSave($insert, $changedAttributes) {
+    public function afterSave($insert, $changedAttributes)
+    {
         parent::afterSave($insert, $changedAttributes);
 
         $module = \Yii::$app->getModule('comments');
@@ -154,44 +151,23 @@ class Comment extends \open20\amos\comments\models\base\Comment
         }
     }
 
-    public function beforeDelete() {
-        $commentReplies = $this->commentReplies;
-        if (!empty($commentReplies)) {
-            foreach ($commentReplies as $commentReply) {
-                CommentNotification::deleteAll(
-                    ['and',
-                        ['model_class_name' => get_class($commentReply)],
-                        ['model_id' => $commentReply->id],
-                    ]
-                );
-            }
-        }
-        CommentNotification::deleteAll(
-            ['and',
-                ['model_class_name' => get_class($this)],
-                ['model_id' => $this->id],
-            ]
-        );
-
-        return parent::beforeDelete();
-    }
-
     /**
      * notify the context model if is created a comment (only on contents inside a scope)
      * @return bool
      */
-    public function saveNotificationForContextModel(){
+    public function saveNotificationForContextModel()
+    {
         $moduleNotify = \Yii::$app->getModule('notify');
-        if(!empty($moduleNotify)) {
+        if (!empty($moduleNotify)) {
             /** @var \open20\amos\core\record\Record $contextModelClassName */
             $contextModelClassName = $this->context;
             /** @var \open20\amos\core\record\Record $contextModel */
-            $contextModel = $contextModelClassName::findOne($this->context_id);
-            if($contextModel && get_class($contextModel) == 'open20\amos\discussioni\models\DiscussioniTopic') {
-                $notifyComment = new \open20\amos\notificationmanager\models\Notification();
+            $contextModel          = $contextModelClassName::findOne($this->context_id);
+            if ($contextModel && get_class($contextModel) == 'open20\amos\discussioni\models\DiscussioniTopic') {
+                $notifyComment             = new \open20\amos\notificationmanager\models\Notification();
                 $notifyComment->content_id = $this->id;
-                $notifyComment->user_id = $this->created_by;
-                $notifyComment->channels = \open20\amos\notificationmanager\models\NotificationChannels::CHANNEL_MAIL;
+                $notifyComment->user_id    = $this->created_by;
+                $notifyComment->channels   = \open20\amos\notificationmanager\models\NotificationChannels::CHANNEL_MAIL;
                 $notifyComment->class_name = get_class($this);
                 $notifyComment->save(false);
 
@@ -203,17 +179,17 @@ class Comment extends \open20\amos\comments\models\base\Comment
                         'class_name' => $contextModelClassName
                     ])
                     ->andWhere(['notificationread.notification_id' => null])
-                    ->andWhere(['IS NOT', 'notification.models_classname_id', null ])
+                    ->andWhere(['IS NOT', 'notification.models_classname_id', null])
                     ->one();
 
 
                 if (empty($notify)) {
-                    $notify = new \open20\amos\notificationmanager\models\Notification();
+                    $notify          = new \open20\amos\notificationmanager\models\Notification();
                     $notify->user_id = $contextModel->created_by;
 
                     //create notification for a network
                     $notify->content_id = $contextModel->id;
-                    $notify->channels = \open20\amos\notificationmanager\models\NotificationChannels::CHANNEL_MAIL;
+                    $notify->channels   = \open20\amos\notificationmanager\models\NotificationChannels::CHANNEL_MAIL;
                     $notify->class_name = $contextModelClassName;
                 }
 
@@ -229,10 +205,10 @@ class Comment extends \open20\amos\comments\models\base\Comment
                             $modelsClassname = ModelsClassname::find()->andWhere(['module' => $exploded[0]])->one();
                             if ($modelsClassname) {
                                 $notify->models_classname_id = $modelsClassname->id;
-                                $notify->record_id = $exploded[1];
+                                $notify->record_id           = $exploded[1];
 
                                 $notifyComment->models_classname_id = $modelsClassname->id;
-                                $notifyComment->record_id = $exploded[1];
+                                $notifyComment->record_id           = $exploded[1];
                             }
                         }
                     }
@@ -245,5 +221,30 @@ class Comment extends \open20\amos\comments\models\base\Comment
             }
         }
         return false;
+    }
+
+    /**
+     * 
+     * @param object $context
+     * @param string $method
+     * @return type
+     */
+    public static function getImageContext($context, $method = null)
+    {
+        if ($method !== null) {
+            return $context->$method();
+        } else if (method_exists($context, 'getNewsImage')) {
+            return $context->getNewsImage();
+        } else if (method_exists($context, 'getDiscussionsTopicImage')) {
+            return $context->getDiscussionsTopicImage();
+        } else if (method_exists($context, 'getImage')) {
+            return $context->getImage();
+        } else if (method_exists($context, 'getImmagine')) {
+            return $context->getImmagine();
+        } else if (method_exists($context, 'getLogo')) {
+            return $context->getLogo();
+        } else {
+            return null;
+        }
     }
 }

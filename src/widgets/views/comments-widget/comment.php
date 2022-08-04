@@ -20,7 +20,6 @@ use open20\amos\core\icons\AmosIcons;
 use open20\amos\core\utilities\ModalUtility;
 use yii\web\View;
 use open20\amos\news\models\News;
-use yii\helpers\Url;
 
 CommentsAsset::register($this);
 
@@ -37,6 +36,8 @@ $('#contribute-btn').on('click', function (event) {
 });
 ";
 $this->registerJs($js, View::POS_READY);
+
+$class= $widget->model->className();
 
 /** @var AmosComments $commentsModule */
 $commentsModule = Yii::$app->getModule(AmosComments::getModuleName());
@@ -63,6 +64,8 @@ ModalUtility::createAlertModal([
             }
         }
 
+        $displayNotifyCheckBox = $displayNotifyCheckBox&& $commentsModule->modelCanDoIt($class, 'enableUserSendMailCheckbox');
+
         $openAccordion = false;
 
         if (isset($commentsModule->accordionOpenedByDefault)) {
@@ -72,10 +75,6 @@ ModalUtility::createAlertModal([
                 }
             }
         }
-
-            
-        $scope = \open20\amos\cwh\AmosCwh::getInstance()->getCwhScope();
-        $tags = [];
 
         $redactorComment = Html::tag(
             'div',
@@ -91,12 +90,6 @@ ModalUtility::createAlertModal([
                     ],
                     'clientOptions' => [
                         'placeholder' => $widget->options['commentPlaceholder'],
-                        'mentions' => [
-                            'url' => Url::to(['/admin/user-profile/find-name-user-by-cwh', 
-                                        'className' => $widget->model::className(),
-                                        'model_id' => $widget->model->id,
-                                    ])
-                        ]
                     ],
                 ]) .
                 $this->render('_send_notify_checkbox', [
@@ -112,22 +105,29 @@ ModalUtility::createAlertModal([
                 'class' => 'contribute-container col-md-8 col-xs-12 nop'
             ]);
 
-        $attachmComment = Html::tag(
-            'div',
-            AttachmentsInput::widget([
-                'id' => 'commentAttachments',
-                'name' => 'commentAttachments',
-                'model' => $widget->model,
-                'options' => [ // Options of the Kartik's FileInput widget
-                    'multiple' => true, // If you want to allow multiple upload, default to false
-                ],
-                'pluginOptions' => [ // Plugin options of the Kartik's FileInput widget
-                    'maxFileCount' => $commentsModule->maxCommentAttachments, // Client max files
-                    'showPreview' => false
-                ]
-            ]),
-            ['class' => 'col-md-4 col-xs-12 nop']
-        );
+
+        if ($commentsModule->modelCanDoIt($class, 'enableUserSendAttachment')) {
+            $attachmComment = Html::tag(
+                'div',
+                AttachmentsInput::widget(
+                    [
+                        'id' => 'commentAttachments',
+                        'name' => 'commentAttachments',
+                        'model' => $widget->model,
+                        'options' => [ // Options of the Kartik's FileInput widget
+                            'multiple' => true, // If you want to allow multiple upload, default to false
+                        ],
+                        'pluginOptions' => [ // Plugin options of the Kartik's FileInput widget
+                            'maxFileCount' => $commentsModule->maxCommentAttachments, // Client max files
+                            'showPreview' => false
+                        ]
+                    ]
+                ),
+                ['class' => 'col-md-4 col-xs-12 nop']
+            );
+        } else {
+            $attachmComment = "";
+        }
 
         $btnComment = Html::tag(
             'div',

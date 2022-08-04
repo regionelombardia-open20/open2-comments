@@ -40,14 +40,11 @@ class CommunityUpdateContentRule extends DefaultOwnContentRule
             /** @var Record $model */
             $model          = $params['model'];
             $modelClassName = $model->className();
-            if (!strcmp($modelClassName,
-                    Comment::className()) || !strcmp($modelClassName,
-                    CommentReply::className())) {
+            if (!strcmp($modelClassName, Comment::className()) || !strcmp($modelClassName, CommentReply::className())) {
                 $cwhModule = Yii::$app->getModule('cwh');
-                $data = ArrayHelper::merge(
-                            \Yii::$app->getRequest()->post(),
-                            \Yii::$app->getRequest()->get()
-                    );
+                $data      = ArrayHelper::merge(
+                        \Yii::$app->getRequest()->post(), \Yii::$app->getRequest()->get()
+                );
 
                 if (isset($data['id'])) {
                     $model = $this->instanceModel($model, $data['id']);
@@ -61,7 +58,6 @@ class CommunityUpdateContentRule extends DefaultOwnContentRule
                         $contextModelClassName = $comment->context;
                         /** @var Record $contextModel */
                         $model                 = $contextModelClassName::findOne($comment->context_id);
-
                     } elseif ($model instanceof Comment) {
 
                         /** @var Comment $model */
@@ -69,7 +65,6 @@ class CommunityUpdateContentRule extends DefaultOwnContentRule
                         $contextModelClassName = $model->context;
                         /** @var Record $contextModel */
                         $model                 = $contextModelClassName::findOne($model->context_id);
-
                     }
                     return $this->validatorContentUpdatePermission($model);
                 }
@@ -86,49 +81,50 @@ class CommunityUpdateContentRule extends DefaultOwnContentRule
     private function validatorContentUpdatePermission($model)
     {
         $cwhModule  = \Yii::$app->getModule('cwh');
-        $cwhEnabled = (isset($cwhModule) && in_array(get_class($model),
-                $cwhModule->modelsEnabled) && $cwhModule->behaviors);
-
-        if ($cwhEnabled) {
-            $scope = $cwhModule->getCwhScope();
-            if (isset($cwhModule) && !empty($scope)) {
+        $cwhEnabled = (isset($cwhModule) && in_array(get_class($model), $cwhModule->modelsEnabled) && $cwhModule->behaviors);
+        if (empty($model)) {
+            return false;
+        } else {
+            if ($cwhEnabled) {
                 $scope = $cwhModule->getCwhScope();
+                if (isset($cwhModule) && !empty($scope)) {
+                    $scope = $cwhModule->getCwhScope();
 
-                $communityModule = \Yii::$app->getModule('community');
-                if (isset($scope['community']) && $communityModule) {
+                    $communityModule = \Yii::$app->getModule('community');
+                    if (isset($scope['community']) && $communityModule) {
 
-                    $community = Community::findOne($scope['community']);
+                        $community = Community::findOne($scope['community']);
 
-                    if (isset($communityModule->forceWorkflowSingleCommunity) && $communityModule->forceWorkflowSingleCommunity) {
-                        if (CommunityUtil::hasRole($community)
-                            || !$community->force_workflow) {
-                            return true;
-                        }
-                    } else {
-                        if (CommunityUtil::hasRole($community)) {
-                            return true;
+                        if (isset($communityModule->forceWorkflowSingleCommunity) && $communityModule->forceWorkflowSingleCommunity) {
+                            if (CommunityUtil::hasRole($community) || !$community->force_workflow) {
+                                return true;
+                            }
+                        } else {
+                            if (CommunityUtil::hasRole($community)) {
+                                return true;
+                            }
                         }
                     }
                 }
-            }
-            if (empty($scope) && \Yii::$app->user->can($model->getFacilitatorRole())) {
-                return true;
+                if (empty($scope) && \Yii::$app->user->can($model->getFacilitatorRole())) {
+                    return true;
+                }
+
+                $validatorRole = $model->getValidatorRole();
+                if (\Yii::$app->user->can('VALIDATOR') || \Yii::$app->user->can($validatorRole)) {
+                    return true;
+                }
+                $cwhActiveQuery     = new CwhActiveQuery(
+                    $model->className(),
+                    [
+                    'queryBase' => $model::find()->distinct()
+                ]);
+                $queryToValidateIds = $cwhActiveQuery->getQueryCwhToValidate(false)->select($model::tableName().'.id')->column();
+            } else {
+                $queryToValidateIds = $model::find()->distinct()->select($model::tableName().'.id')->column();
             }
 
-            $validatorRole = $model->getValidatorRole();
-            if (\Yii::$app->user->can('VALIDATOR') || \Yii::$app->user->can($validatorRole)) {
-                return true;
-            }
-        $cwhActiveQuery     = new CwhActiveQuery(
-            $model->className(),
-            [
-            'queryBase' => $model::find()->distinct()
-        ]);
-        $queryToValidateIds = $cwhActiveQuery->getQueryCwhToValidate(false)->select($model::tableName().'.id')->column();
-        } else {
-			$queryToValidateIds = $model::find()->distinct()->select($model::tableName().'.id')->column();
-		}
-
-        return (in_array($model->id, $queryToValidateIds));
+            return (in_array($model->id, $queryToValidateIds));
+        }
     }
 }

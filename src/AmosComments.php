@@ -16,11 +16,8 @@ use open20\amos\comments\models\CommentReply;
 use open20\amos\core\components\AmosView;
 use open20\amos\core\module\AmosModule;
 use open20\amos\core\module\ModuleInterface;
-use open20\amos\core\record\Record;
 use yii\base\BootstrapInterface;
 use yii\base\Event;
-use yii\db\ActiveRecord;
-use yii\helpers\VarDumper;
 
 /**
  * Class AmosComments
@@ -49,6 +46,7 @@ class AmosComments extends AmosModule implements ModuleInterface, BootstrapInter
      * @var array $modelsEnabled
      */
     public $modelsEnabled           = [];
+    public $modelsConfiguration     = [];
     public $maxCommentAttachments   = 5;
     public $enableMailsNotification = true;
 
@@ -104,6 +102,7 @@ class AmosComments extends AmosModule implements ModuleInterface, BootstrapInter
      * 
      */
     public $htmlMailContentDefault = '@vendor/open20/amos-comments/src/views/comment/email/content';
+
     /**
      * Sets if the notify checkbox must be visible into the comments accordion
      * @var bool
@@ -139,19 +138,15 @@ class AmosComments extends AmosModule implements ModuleInterface, BootstrapInter
      *
      * @var type
      */
-    public $disablePagination = false;
+    public $disablePagination     = false;
 
     /**
-     *  Example:
-     * [
-     *  'open20\amos\documenti\models\Documenti',
-     *  'open20\amos\news\models\News',
-     *  'open20\amos\discussioni\models\Discussioni',
-     * ]
      *
-     * @var boolean
+     * @var bool $enableModerator
      */
-    public $bellNotificationEnabledClasses = [];
+    public $enableModerator     = false;
+    
+    private static $registerEvent = false;
 
     /**
      * @return string
@@ -201,14 +196,10 @@ class AmosComments extends AmosModule implements ModuleInterface, BootstrapInter
      */
     public function bootstrap($app)
     {
-        Event::on(AmosView::className(), AmosView::AFTER_RENDER_CONTENT, [new CommentComponent(), 'showComments']);
-
-        if (!empty($this->bellNotificationEnabledClasses) && is_array($this->bellNotificationEnabledClasses)){
-            foreach ($this->bellNotificationEnabledClasses as $modelClassName){
-                Event::on($modelClassName, Record::EVENT_AFTER_INSERT, [new CommentComponent(), 'addCreatorEnableNotificationUser']);
-            }
+        if (self::$registerEvent == false) {
+            self::$registerEvent = true;
+            Event::on(AmosView::className(), AmosView::AFTER_RENDER_CONTENT, [new CommentComponent(), 'showComments']);
         }
-
     }
 
     /**
@@ -229,5 +220,27 @@ class AmosComments extends AmosModule implements ModuleInterface, BootstrapInter
             ->andWhere(['is not', CommentReply::tableName().'.id', null]);
         $countComment += $query->count();
         return $countComment;
+    }
+
+    /**
+     * Configurazione per-modulo di varie opzioni
+     * @param $classname
+     * @param $action
+     * @return bool|mixed
+     */
+    public function modelCanDoIt($classname, $action) {
+        if(empty($classname) || empty($action)) {
+            return false;
+        }
+
+        if(array_key_exists($classname, $this->modelsConfiguration)) {
+            $config = $this->modelsConfiguration[$classname];
+
+            if(array_key_exists($action, $config)) {
+                return $config[$action];
+            }
+        }
+
+        return true;
     }
 }

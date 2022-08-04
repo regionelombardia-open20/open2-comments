@@ -50,10 +50,16 @@ $commentsModule = Yii::$app->getModule(AmosComments::getModuleName());
         <div class="col-lg-8 col-xs-12">
             <?= $form->field($model, 'comment_reply_text')->widget(TextEditorWidget::className(), [
                 'clientOptions' => [
-                    'lang' => substr(Yii::$app->language, 0, 2)
+                    'lang' => substr(Yii::$app->language, 0, 2),
+                    'plugins' => [
+                        "paste link",
+                    ],
+                    'toolbar' => "undo redo | link",
                 ]
             ]) ?>
         </div>
+
+        <?php if ($commentsModule->modelCanDoIt($class, 'enableUserSendAttachment')) : ?>
         <div class="col-lg-4 col-xs-12">
             <?= AttachmentsWidget::widget([
                 'form' => $form,
@@ -68,9 +74,10 @@ $commentsModule = Yii::$app->getModule(AmosComments::getModuleName());
                 ],
             ]) ?>
         </div>
+        <?php endif; ?>
     </div>
 
-    <?php if ($commentsModule->enableUserSendMailCheckbox && (Yii::$app->controller->action->id == 'create')): ?>
+    <?php if ($commentsModule->enableUserSendMailCheckbox && $commentsModule->modelCanDoIt($class, 'enableUserSendMailCheckbox') && (Yii::$app->controller->action->id == 'create')): ?>
         <div class="row">
             <div class="col-xs-12">
                 <?= Html::checkbox('send-reply-notify-mail', true, ['label' => ' ' . AmosComments::t('amoscomments', '#checkbox_send_notify')]) ?>
