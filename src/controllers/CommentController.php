@@ -30,7 +30,7 @@ use open20\amos\core\controllers\CrudController;
 use open20\amos\comments\models\search\CommentSearch;
 use open20\amos\comments\exceptions\CommentsException;
 use open20\amos\comments\base\PartecipantsNotification;
-
+use open20\amos\core\models\TagNotification;
 use open20\amos\notificationmanager\utility\NotifyUtility;
 use open20\amos\comments\models\CommentNotificationUsers;
 use open20\amos\admin\models\UserProfile;
@@ -226,6 +226,14 @@ class CommentController extends CrudController
             $modelContext = $modelContext::find()->andWhere(['id' => $this->model->context_id])->one();
 
             $user_profiles = UserProfile::find()->andWhere(['id' => $user_profile_ids])->all();
+            foreach ($user_profiles as $user_profile) {
+                $notification = new TagNotification();
+                $notification->context_model_class_name = get_class($modelContext);
+                $notification->context_model_id = $modelContext->id;
+                $notification->user_id = $user_profile->user->id;
+                $notification->read = false;
+                $notification->save();
+            }
             Record::sendEmailForUserProfiles($user_profiles, $modelContext, $this->model);
         }
 
