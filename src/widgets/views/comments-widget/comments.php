@@ -92,10 +92,19 @@ if (isset($commentsModule->displayNotifyCheckbox)) {
             </div>
             <div class="answer-details media-body">
                 <div class="col-xs-10 nop">
-                    <h4><?=
-                        Html::a($comment->createdUserProfile,
-                            ['/admin/user-profile/view', 'id' => $comment->createdUserProfile->id])
-                        ?></h4>
+                    <h4>
+                        <?php
+                        if (isset(\Yii::$app->params['disableLinkContentCreator']) && (\Yii::$app->params['disableLinkContentCreator'] === true)):
+                            echo $comment->createdUserProfile;
+                        else: ?>
+                            <?=
+                            Html::a($comment->createdUserProfile,
+                                ['/admin/user-profile/view', 'id' => $comment->createdUserProfile->id])
+                            ?>
+                            <?php
+                        endif;
+                        ?>
+                    </h4>
                     <p> <?= Yii::$app->getFormatter()->asDatetime($comment->created_at) ?></p>
                 </div>
                     <?php if ($widget->model->hasMethod('getCloseCommentThread') && !$widget->model->getCloseCommentThread()) : ?>

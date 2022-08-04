@@ -39,7 +39,6 @@ class CommentsWidget extends Widget
     public $options = [];
 
     /**
-     * @see \kartik\base\Widget::init();
      *
      * Set of the permissionSave
      */

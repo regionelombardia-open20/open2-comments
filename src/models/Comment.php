@@ -46,7 +46,6 @@ class Comment extends \open20\amos\comments\models\base\Comment
     
 
     /**
-     * @see \yii\db\BaseActiveRecord::init() for more info.
      */
     public function init()
     {
