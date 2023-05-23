@@ -74,15 +74,18 @@ class Comment extends \open20\amos\comments\models\base\Comment
     public function rules()
     {
         $maxCommentAttachments = 0;
+        $mimeTypes = '';
 
         /** @var AmosComments $commentsModule */
         $commentsModule = \Yii::$app->getModule(AmosComments::getModuleName());
         if (isset($commentsModule)) {
             $maxCommentAttachments = $commentsModule->maxCommentAttachments;
+            if($commentsModule->hasProperty(mimeTypes))
+                $mimeTypes = $commentsModule->mimeTypes;
         }
         return ArrayHelper::merge(parent::rules(),
                 [
-                [['commentAttachments'], 'file', 'maxFiles' => $maxCommentAttachments],
+                [['commentAttachments'], 'file', 'maxFiles' => $maxCommentAttachments, 'mimeTypes'=>$mimeTypes],
         ]);
     }
 

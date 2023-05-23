@@ -53,20 +53,20 @@ class CommunityUpdateContentRule extends DefaultOwnContentRule
                     if ($model instanceof CommentReply) {
 
                         /** @var Comment $comment */
-                        $comment               = $model->comment;
+                        $comment = $model->comment;
                         /** @var Record $contextModelClassName */
                         $contextModelClassName = $comment->context;
                         /** @var Record $contextModel */
-                        $model                 = $contextModelClassName::findOne($comment->context_id);
+                        $contextModel = $contextModelClassName::findOne($comment->context_id);
                     } elseif ($model instanceof Comment) {
 
                         /** @var Comment $model */
                         /** @var Record $contextModelClassName */
                         $contextModelClassName = $model->context;
                         /** @var Record $contextModel */
-                        $model                 = $contextModelClassName::findOne($model->context_id);
+                        $contextModel = $contextModelClassName::findOne($model->context_id);
                     }
-                    return $this->validatorContentUpdatePermission($model);
+                    return $this->validatorContentUpdatePermission($model, $contextModel);
                 }
             }
         }
@@ -75,14 +75,15 @@ class CommunityUpdateContentRule extends DefaultOwnContentRule
     }
 
     /**
-     * @param Record $model
+     * @param Comment $model
+     * @param Record $contextModel
      * @return bool
      */
-    private function validatorContentUpdatePermission($model)
+    private function validatorContentUpdatePermission($model, $contextModel)
     {
         $cwhModule  = \Yii::$app->getModule('cwh');
-        $cwhEnabled = (isset($cwhModule) && in_array(get_class($model), $cwhModule->modelsEnabled) && $cwhModule->behaviors);
-        if (empty($model)) {
+        $cwhEnabled = (isset($cwhModule) && in_array(get_class($contextModel), $cwhModule->modelsEnabled) && $cwhModule->behaviors);
+        if (empty($contextModel)) {
             return false;
         } else {
             if ($cwhEnabled) {
@@ -106,25 +107,34 @@ class CommunityUpdateContentRule extends DefaultOwnContentRule
                         }
                     }
                 }
-                if (empty($scope) && \Yii::$app->user->can($model->getFacilitatorRole())) {
+                if (empty($scope) && \Yii::$app->user->can($contextModel->getFacilitatorRole())) {
                     return true;
                 }
 
-                $validatorRole = $model->getValidatorRole();
+                $validatorRole = $contextModel->getValidatorRole();
                 if (\Yii::$app->user->can('VALIDATOR') || \Yii::$app->user->can($validatorRole)) {
                     return true;
                 }
                 $cwhActiveQuery     = new CwhActiveQuery(
-                    $model->className(),
+                    $contextModel->className(),
                     [
-                    'queryBase' => $model::find()->distinct()
+                    'queryBase' => $contextModel::find()->distinct()
                 ]);
-                $queryToValidateIds = $cwhActiveQuery->getQueryCwhToValidate(false)->select($model::tableName().'.id')->column();
+                $queryToValidateIds = $cwhActiveQuery->getQueryCwhToValidate(false)->select($contextModel::tableName().'.id')->column();
             } else {
-                $queryToValidateIds = $model::find()->distinct()->select($model::tableName().'.id')->column();
+                // Condizione per avere il permesso
+                $isOwner = ($model->created_by == Yii::$app->user->id);
+
+                // Condizione extra come ad esempio essere Community Manager nel plugin Community
+                $extraCondition = false;
+                if($contextModel->className() == Community::className()){
+                    $extraCondition = CommunityUtil::loggedUserIsCommunityManager($contextModel->id);
+                }
+
+                return ($isOwner || $extraCondition);
             }
 
-            return (in_array($model->id, $queryToValidateIds));
+            return (in_array($contextModel->id, $queryToValidateIds));
         }
     }
 }

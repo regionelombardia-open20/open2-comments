@@ -28,7 +28,7 @@ use yii\data\Pagination;
 class CommentsWidget extends Widget
 {
     /**
-     * 
+     *
      * @var type
      */
     public $layout = '<div id="comments-container">{commentSection}{commentsSection}</div>';
@@ -37,63 +37,75 @@ class CommentsWidget extends Widget
      * @var \open20\amos\core\record\Record $model
      */
     public $model;
-    
+
     /**
-     * 
+     *
      * @var type
      */
     public $namespaceAssetBootstrapitalia = 'amos\planner\assets\BootstrapItaliaAsset';
-    
+
     /**
-     * 
+     *
      * @var type
      */
     public $noAttach = 0;
-    
+
     /**
-     * 
+     *
+     * @var type
+     */
+    public $chat = false;
+
+    /**
+     *
      * @var type
      */
     public $frontend = false;
-    
+
     /**
-     * 
+     *
      * @var type
      */
     public $layoutInverted = false;
-    
+
     /**
-     * 
+     *
      * @var type
      */
     public $urlRegistrazione = null;
-    
+
     /**
-     * 
+     *
      * @var type
      */
     public $performance = false;
-    
+
     /**
-     * 
+     *
      * @var type
      */
     public $defaultLimit = 10;
-    
+
     /**
-     * 
+     *
+     * @var type
+     */
+    public $chatLimit = 100;
+
+    /**
+     *
      * @var type
      */
     public $pageSize = 5;
-    
+
     /**
-     * 
+     *
      * @var type
      */
     public $useDesign = false;
-    
+
     /**
-     * 
+     *
      * @var type
      */
     public $moderator = false;
@@ -118,7 +130,7 @@ class CommentsWidget extends Widget
     public $toolbar = 'fullscreen | undo redo | bold italic strikethrough | link | removeformat';
 
     /**
-     * 
+     *
      * @var type
      */
     public $rteMobile = [
@@ -133,7 +145,7 @@ class CommentsWidget extends Widget
     ];
 
     /**
-     * 
+     *
      * @var type
      */
     public $useRTE = false;
@@ -152,7 +164,7 @@ class CommentsWidget extends Widget
         $this->initDefaultOptions();
 
         $module = \Yii::$app->getModule('comments');
-        if (!empty($module->layoutInverted) && $module->layoutInverted == true) {
+        if ((!empty($module->layoutInverted) && $module->layoutInverted == true) || $this->layoutInverted) {
             $this->layout = '<div id="comments-container">{commentsSection}{commentSection}</div>';
         }
 
@@ -183,21 +195,21 @@ class CommentsWidget extends Widget
     }
 
     /**
-     * 
+     *
      * @return type
      */
     public function run()
     {
-        if(\Yii::$app->user->isGuest){
+        if(\Yii::$app->user->isGuest && !\Yii::$app->getModule('comments')->disableBannerCtaForGuest){
             return $this->render('comments-widget/banner-cta');
         }
 
         $content = preg_replace_callback("/{\\w+}/",
             function ($matches) {
-            $content = $this->renderSection($matches[0]);
+                $content = $this->renderSection($matches[0]);
 
-            return $content === false ? $matches[0] : $content;
-        }, $this->layout);
+                return $content === false ? $matches[0] : $content;
+            }, $this->layout);
 
         return $content;
     }
@@ -242,6 +254,8 @@ class CommentsWidget extends Widget
     {
         if ($this->frontend == true) {
             return $this->render('frontend/comment', ['widget' => $this]);
+        } else if ($this->chat == true) {
+            return $this->render('chat/comment', ['widget' => $this]);
         } else if ($this->useDesign === true) {
             return $this->render('design/comment', ['widget' => $this]);
         } else if (property_exists(get_class($this->model), 'bootstrapItalia') && $this->model->bootstrapItalia == true) {
@@ -264,8 +278,9 @@ class CommentsWidget extends Widget
             ->andWhere([
                 'context' => $this->model->className(),
                 'context_id' => $this->model->id
-            ])
-            ->orderBy(['created_at' => $module->orderDisplayComments]);
+            ]);
+        if(!$this->chat) $query->orderBy(['created_at' => $module->orderDisplayComments]);
+        else $query->orderBy('created_at DESC');
 
         /** @var \open20\amos\comments\models\Comment $lastComment */
         $lastComment = Comment::find()
@@ -274,10 +289,12 @@ class CommentsWidget extends Widget
                 'context_id' => $this->model->id
             ])
             ->orderBy(['created_at' => $module->orderDisplayComments])
-                ->limit(1)
-                ->one();
-
-        if ($this->performance == true) {
+            ->limit(1)
+            ->one();
+        if($this->chat == true){
+            $query->limit($this->chatLimit);
+            $comments = $query->all();
+        } else if ($this->performance == true) {
             $query->limit($this->defaultLimit);
             $comments = $query->all();
         } else if ($module->disablePagination == true) {
@@ -291,10 +308,26 @@ class CommentsWidget extends Widget
 
         // check if notification bell is enabled or not for this user:
         $notificationUserStatus = CommentsUtility::getCommentNotificationUserStatus(
-            $this->model::className(),
+            get_class($this->model),
             $this->model->id,
             \Yii::$app->user->id
         );
+        if(is_null($notificationUserStatus)){
+            $model = CommentsUtility::getCommentNotificationUser(
+                get_class($this->model),
+                $this->model->id,
+                \Yii::$app->user->id
+            );
+            if (empty($model)) {
+                $model = new \open20\amos\comments\models\base\CommentNotificationUsers();
+                $model->user_id = \Yii::$app->user->id;
+                $model->context_model_class_name = get_class($this->model);
+                $model->context_model_id = $this->model->id;
+                $model->enable = true;
+                $model->save(false);
+                $notificationUserStatus = true;
+            }
+        }
 
         if ($this->frontend == true) {
             return $this->render('frontend/comments', [
@@ -303,6 +336,12 @@ class CommentsWidget extends Widget
                 'comments' => $comments,
                 'lastComment' => $lastComment,
                 'no_attach' => $this->noAttach,
+            ]);
+        } else if ($this->chat == true) {
+            return $this->render('chat/comments', [
+                'widget' => $this,
+                'comments' => $comments,
+                'notificationUserStatus' => $notificationUserStatus
             ]);
         } else if ($this->useDesign == true) {
             return $this->render('design/comments', [
@@ -322,7 +361,7 @@ class CommentsWidget extends Widget
                 'no_attach' => $this->noAttach,
             ]);
         }
-        
+
         return $this->render('comments-widget/comments', [
             'widget' => $this,
             'pages' => $pages,
@@ -331,5 +370,4 @@ class CommentsWidget extends Widget
             'notificationUserStatus' => $notificationUserStatus
         ]);
     }
-
 }

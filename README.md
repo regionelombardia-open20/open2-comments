@@ -38,6 +38,7 @@ to the require section of your `composer.json` file.
         // the following are mandatory fields
         'displayNotifyCheckbox' => true, // if the notify checkbox in the accordion must be shown (if hidden, the notify checkbox is selected)
         'accordionOpenedByDefault' => false, // if the accordion must be opened by default
+        'whiteListFilesExtensions' => ['csv', 'doc', 'docx', 'pdf', 'rtf', 'txt', 'xls', 'xlsx', 'odt'];
     ],
 ],
 ```

@@ -43,8 +43,11 @@ class Comment extends NotifyRecord
     {
         parent::init();
         $module = \Yii::$app->getModule(AmosComments::getModuleName());
-        $this->setEnableModerator($module->enableModerator);
+        if($module) {
+            $this->setEnableModerator($module->enableModerator);
+        }
         $this->isModerator();
+
     }
 
     /**
@@ -128,6 +131,11 @@ class Comment extends NotifyRecord
     public function getCommentReplies()
     {
         return $this->hasMany(\open20\amos\comments\models\CommentReply::className(), ['comment_id' => 'id']);
+    }
+
+    public function getUserProfile()
+    {
+        return $this->hasOne(\open20\amos\admin\models\UserProfile::className(), ['id' => 'created_by']);
     }
 
     public function setModerator($moderator)

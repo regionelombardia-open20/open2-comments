@@ -88,4 +88,6 @@ return [
     '#titleBoxPartecipa' => 'Vuoi partecipare ed essere aggiornato?',
     '#subtitleBoxPartecipaLoginRegister' => 'Accedi o registrati a {platformName}',
     '#subtitleBoxPartecipaLogin' => 'Accedi a {platformName}',
+    '#chat_message_subject' => 'Nuovo messaggio chat community {communityName}',
+    '#chat_message_mail_content' => '<br>E\' stato inviato un nuovo messaggio nella chat della community <a href="{communityUrl}" title="Vai alla community" target="_blank">{communityName}</a>',
 ];

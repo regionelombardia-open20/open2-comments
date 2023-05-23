@@ -14,6 +14,7 @@ use open20\amos\comments\AmosComments;
 use open20\amos\comments\models\Comment;
 use open20\amos\comments\models\CommentReply;
 use open20\amos\comments\utility\CommentsUtility;
+use open20\amos\community\models\Community;
 use open20\amos\core\controllers\CrudController;
 use open20\amos\core\interfaces\ModelLabelsInterface;
 use open20\amos\core\record\Record;
@@ -83,6 +84,44 @@ class PartecipantsNotification extends BaseObject
         $this->sendEmail($users, $contextModel, $model, $model_reply);
     }
 
+    /**
+     * This method sends the mail notifications of the chat
+     * @param $userIds
+     * @param Comment $comment
+     */
+    public function partecipantChatAlert($userIds, Comment $comment)
+    {
+//        /** @var \open20\amos\core\record\Record $contextModelClassName */
+//        $contextModelClassName = $comment->context;
+//        /** @var \open20\amos\core\record\Record $contextModel */
+//        $contextModel          = $contextModelClassName::findOne($comment->context_id);
+//        $this->sendEmail($userIds, $contextModel, $comment);
+
+        if (!empty($userIds)) {
+            foreach ($userIds as $userId) {
+                /** @var User $user */
+                $user = User::findOne($userId);
+                if ($user->userProfile->isActive()) {
+                    /** @var Community $communityModel */
+                    $communityModel = $comment->context;
+                    $communityId = $comment->context_id;
+                    $community = $communityModel::findOne($communityId);
+                    $from = \Yii::$app->params['email-assistenza'] ?? 'assistenza@open20.it';
+                    $subject = \Yii::t('amoscomments', '#chat_message_subject', [
+                        'communityName' => $community->name,
+                    ]);
+                    $message = \Yii::t('amoscomments', '#chat_message_mail_content', [
+                        'communityUrl' => Yii::$app->urlManager->createAbsoluteUrl([
+                            '/' . $community->getFullViewUrl()
+                        ]),
+                        'communityName' => $community->name,
+                    ]);
+                    $email = new Email();
+                    $email->sendMail($from, [$user->email], $subject, $message);
+                }
+            }
+        }
+    }
 
     /**
      * Method to exclude users when notification taggin user in content is disabled

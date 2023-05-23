@@ -11,7 +11,9 @@
 namespace open20\amos\comments\controllers;
 
 use DeepCopyTest\Matcher\Y;
+use open20\amos\admin\AmosAdmin;
 use open20\amos\comments\utility\CommentsUtility;
+use open20\amos\community\models\Community;
 use Yii;
 use Exception;
 use yii\helpers\Url;
@@ -59,7 +61,7 @@ class CommentController extends CrudController
         $this->setAvailableViews([
             'grid' => [
                 'name' => 'grid',
-                'label' => AmosIcons::show('view-list-alt').Html::tag('p', AmosComments::t('amoscomments', 'Table')),
+                'label' => AmosIcons::show('view-list-alt') . Html::tag('p', AmosComments::t('amoscomments', 'Table')),
                 'url' => '?currentView=grid'
             ]
         ]);
@@ -74,16 +76,17 @@ class CommentController extends CrudController
     public function behaviors()
     {
         return ArrayHelper::merge(parent::behaviors(),
-                [
+            [
                 'access' => [
                     'class' => AccessControl::className(),
                     'rules' => [
                         [
                             'allow' => true,
                             'actions' => [
-                                'create-ajax',
+                                //'create-ajax',
                                 'valid',
                                 'suspend',
+                                'update-chat-ajax'
                             ],
                             'roles' => ['COMMENTS_ADMINISTRATOR', 'COMMENTS_CONTRIBUTOR']
                         ],
@@ -110,7 +113,7 @@ class CommentController extends CrudController
                         'delete' => ['post', 'get']
                     ]
                 ]
-        ]);
+            ]);
     }
 
     /**
@@ -155,14 +158,14 @@ class CommentController extends CrudController
     {
         $this->setUpLayout('form');
         $this->model = new Comment();
-        $post        = Yii::$app->request->post();
+        $post = Yii::$app->request->post();
 
         /** @var AmosComments $commentsModule */
         $commentsModule = Yii::$app->getModule(AmosComments::getModuleName());
 
         if ($this->model->load($post) && $this->model->save()) {
             if (!$commentsModule->enableUserSendMailCheckbox || ($commentsModule->enableUserSendMailCheckbox && isset($post['send_notify_mail'])
-                && $post['send_notify_mail'])) {
+                    && $post['send_notify_mail'])) {
                 $partecipantsnotify = $this->getParticipantsNotificationInstance();
                 $partecipantsnotify->partecipantAlert($this->model);
             }
@@ -176,7 +179,7 @@ class CommentController extends CrudController
             return $this->redirect(Url::previous());
         } else {
             return $this->render('create', [
-                    'model' => $this->model,
+                'model' => $this->model,
             ]);
         }
     }
@@ -185,7 +188,95 @@ class CommentController extends CrudController
      * @return array|Comment
      * @throws CommentsException
      */
-    public function actionCreateAjax()
+    public function actionUpdateChatAjax($id)
+    {
+        $post = $data = Yii::$app->request->post();
+        $context = $post['context'];
+        $context_id = $post['context_id'];
+        $timeCheck = $post['timeCheck'];
+        $modelContext = new $post['model'];
+        $model = $modelContext::find()->andWhere(['id' => $this->model->context_id])->one();
+
+        if (!Yii::$app->request->isAjax) {
+            throw new CommentsException(AmosComments::t('amoscomments', 'The request is not AJAX.'));
+        }
+
+        Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
+
+        $queryNew = Comment::find()
+            ->andWhere(['>', 'id', $id])
+            ->andWhere(['!=', 'created_by', \Yii::$app->user->id])
+            ->andWhere(['context' => $context])
+            ->andWhere(['context_id' => $context_id])
+            ->all();
+        $result = [[], [], []];
+        foreach($queryNew as $comment){
+            $deleteCAN = Yii::$app->getUser()->can('COMMENT_DELETE', ['model' => $model, 'user_id' => $comment->created_by]);
+            $updateCAN = Yii::$app->getUser()->can('COMMENT_UPDATE', ['model' => $model, 'user_id' => $comment->created_by]);
+            // If context is community, check if user is community manager
+            if($context == 'open20\amos\community\models\Community'){
+                $community = Community::findOne($context_id);
+                if($community && $community->isCommunityManager()){
+                    $deleteCAN = true;
+                    $updateCAN = true;
+                }
+            }
+
+            if(Yii::$app->getFormatter()->asDate($comment->created_at, 'short') === date('d/m/y')){
+                $date = Yii::$app->getFormatter()->asTime($comment->created_at, 'short');
+            }
+            else{
+                $date = Yii::$app->getFormatter()->asDateTime($comment->created_at, 'short');
+            }
+
+            $result[0][] = [
+                'id' => $comment->id,
+                'message' => $comment->comment_text,
+                'date' => $date,
+                'profileId' => '/' . AmosAdmin::getModuleName() . '/user-profile/view?id=' . $comment->createdUserProfile->id,
+                'nomeCognome' => $comment->createdUserProfile->nomeCognome,
+                'image' => $comment->createdUserProfile->getAvatarWebUrl('square_small'),
+                'deleteCAN' => $deleteCAN,
+                'updateCAN' => $updateCAN
+            ];
+        }
+        $queryMod = Comment::find()
+            ->andWhere(['>', 'updated_at', $timeCheck])
+            ->andWhere(['<=', 'id', $id])
+            ->andWhere(['!=', 'updated_by', \Yii::$app->user->id])
+            ->andWhere(new \yii\db\Expression("comment.created_at != comment.updated_at"))
+            ->andWhere(['context' => $context])
+            ->andWhere(['context_id' => $context_id])
+            ->all();
+        foreach($queryMod as $comment){
+
+            $result[1][] = [
+                'id' => $comment->id,
+                'message' => $comment->comment_text
+            ];
+        }
+
+        $queryDel = Comment::find()
+            ->where(['>', 'deleted_at', $timeCheck])
+            ->andWhere(['<=', 'id', $id])
+            ->andWhere(['!=', 'deleted_by', \Yii::$app->user->id])
+            ->andWhere(['context' => $context])
+            ->andWhere(['context_id' => $context_id])
+            ->all();
+        foreach($queryDel as $comment){
+
+            $result[2][] = [
+                'id' => $comment->id
+            ];
+        }
+        return $result;
+    }
+
+    /**
+     * @return array|Comment
+     * @throws CommentsException
+     */
+    public function actionCreateAjax($chat=false)
     {
         $this->setUpLayout('form');
         $this->model = new Comment();
@@ -195,7 +286,7 @@ class CommentController extends CrudController
         }
 
         Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
-        $post                       = Yii::$app->request->post();
+        $post = Yii::$app->request->post();
 
         if (!$this->model->load($post)) {
             return [
@@ -208,11 +299,10 @@ class CommentController extends CrudController
         if (!$this->model->validate()) {
             return [
                 'error' => [
-                    'msg' => AmosComments::t('amoscomments', 'Validation errors! Check the data entered.')
+                    'msg' => reset($this->model->getFirstErrors())//AmosComments::t('amoscomments', 'Validation errors! Check the data entered.')
                 ],
             ];
         }
-
 
 
         // check if model values is change
@@ -220,7 +310,7 @@ class CommentController extends CrudController
         $user_profile_ids = $this->extractTagginUserCommentText($this->model->comment_text, $this->model->getOldAttribute('comment_text'));
 
         // send notification to user user_profile_ids
-        if( (null != $user_profile_ids) || (!empty($user_profile_ids)) ){
+        if ((null != $user_profile_ids) || (!empty($user_profile_ids))) {
 
             // // get model context
             $modelContext = new $this->model->context;
@@ -230,19 +320,38 @@ class CommentController extends CrudController
             $this->model->sendEmailForUserProfiles($user_profiles, $modelContext, $this->model);
         }
 
-
         if ($this->model->save()) {
             //            NotifyUtility::getNetworkNotificationConf()
             /** @var AmosComments $commentsModule */
             $commentsModule = Yii::$app->getModule(AmosComments::getModuleName());
             if (!$commentsModule->enableUserSendMailCheckbox || ($commentsModule->enableUserSendMailCheckbox && isset($post['send_notify_mail'])
-                && $post['send_notify_mail'])) {
+                    && $post['send_notify_mail'])) {
                 $partecipantsnotify = $this->getParticipantsNotificationInstance();
                 $partecipantsnotify->partecipantAlert($this->model);
             }
 
             $this->enableCommentNotification($this->model->context, $this->model->context_id);
+            if($chat){
+                // invio mail a tutti quelli che hanno la campanellina attiva tranne me stesso
+                $toNotifyList = CommentsUtility::getAllCommentNotificationUserEnabled($this->model->context, $this->model->context_id);
+                if (($key = array_search(\Yii::$app->user->id, $toNotifyList)) !== false) {
+                    unset($toNotifyList[$key]);
+                }
+                if ((!empty($toNotifyList)) && isset($post['sendMailNotification']) && ($post['sendMailNotification'])) {
+                    $partecipantsnotify = $this->getParticipantsNotificationInstance();
+                    $partecipantsnotify->partecipantChatAlert($toNotifyList, $this->model);
+                }
 
+                $result = [
+                    'id' => $this->model->id,
+                    'message' => $this->model->comment_text,
+                    'date' => Yii::$app->getFormatter()->asTime($this->model->created_at, 'short'),
+                    'profileId' => '/' . AmosAdmin::getModuleName() . '/user-profile/view?id=' . $this->model->createdUserProfile->id,
+                    'nomeCognome' => $this->model->createdUserProfile->nomeCognome,
+                    'image' => $this->model->createdUserProfile->getAvatarWebUrl('square_small')
+                ];
+                return $result;
+            }
             return $this->model;
         } else {
             return [
@@ -314,35 +423,34 @@ class CommentController extends CrudController
 
                 // enable notification for comments
                 $this->enableCommentNotification($this->model->context, $this->model->context_id);
-
+                if (Yii::$app->request->isAjax) return true;
                 return $this->redirect(BreadcrumbHelper::lastCrumbUrl());
 
             } else {
                 Yii::$app->getSession()->addFlash('danger',
                     AmosComments::t('amoscomments', 'Comment not updated, check the data entered.'));
                 return $this->render('update',
-                        [
+                    [
                         'no_attach' => $noAttach,
                         'url' => $url,
                         'model' => $this->model,
                         'fid' => NULL,
                         'dataField' => NULL,
                         'dataEntity' => NULL,
-                ]);
+                    ]);
             }
         } else {
             return $this->render('update',
-                    [
+                [
                     'no_attach' => $noAttach,
                     'model' => $this->model,
                     'url' => $url,
                     'fid' => NULL,
                     'dataField' => NULL,
                     'dataEntity' => NULL,
-            ]);
+                ]);
         }
     }
-
 
 
     /**
@@ -351,7 +459,7 @@ class CommentController extends CrudController
      */
     private function getSubject(Record $contextModel)
     {
-        $content_subject = 'email'.DIRECTORY_SEPARATOR.'content_subject';
+        $content_subject = 'email' . DIRECTORY_SEPARATOR . 'content_subject';
 
         if ($this->commentsModule) {
             if (is_array($this->commentsModule->htmlMailContentSubject)) {
@@ -379,13 +487,14 @@ class CommentController extends CrudController
      *
      * @return array | $new_tagging_user_id
      */
-    public function extractTagginUserCommentText($new_text = null, $old_text = null){
+    public function extractTagginUserCommentText($new_text = null, $old_text = null)
+    {
 
         $new_tagging_user_id = [];
 
         // get all user_id from old text and all user_id from new text
-        $user_id_new = (array) Record::getMentionUserIdFromText($new_text);
-        $user_id_old = (array) Record::getMentionUserIdFromText($old_text);
+        $user_id_new = (array)Record::getMentionUserIdFromText($new_text);
+        $user_id_old = (array)Record::getMentionUserIdFromText($old_text);
 
         // extract only different id user between new user id and old user id
         $new_tagging_user_id = array_diff($user_id_new, $user_id_old);
@@ -397,14 +506,13 @@ class CommentController extends CrudController
             $user_profile = \open20\amos\admin\models\UserProfile::find()->andWhere(['id' => $user_profile_id])->one();
 
             // remove all user_profile with notify_taggin_user_in_content
-            if( $user_profile && ($user_profile->notify_tagging_user_in_content == 0) ){
+            if ($user_profile && ($user_profile->notify_tagging_user_in_content == 0)) {
                 unset($new_tagging_user_id[$key]);
             }
         }
 
         return $new_tagging_user_id;
     }
-
 
 
     /**
@@ -416,7 +524,7 @@ class CommentController extends CrudController
     {
         $this->model = $this->findModel($id);
         if ($this->model) {
-            $ok             = true;
+            $ok = true;
             $commentReplies = $this->model->commentReplies;
 
             if (!empty($commentReplies)) {
@@ -447,6 +555,7 @@ class CommentController extends CrudController
         if (!empty($url)) {
             return $this->redirect($url);
         }
+        if (Yii::$app->request->isAjax) return true;
         return $this->redirect(Url::previous());
     }
 
@@ -456,15 +565,18 @@ class CommentController extends CrudController
      *
      * @return void | go back
      */
-    public function actionCommentNotificationUser($context, $contextId, $enable){
+    public function actionCommentNotificationUser($context, $contextId, $enable)
+    {
 
-        $ret = CommentsUtility::setCommentNotificationUser($context,$contextId, Yii::$app->user->id, (bool)$enable);
-        if( !$ret ){
+        $ret = CommentsUtility::setCommentNotificationUser($context, $contextId, Yii::$app->user->id, (bool)$enable);
+        if (!$ret) {
             \Yii::$app->getSession()->addFlash('danger', \Yii::t('app', 'Errore! Non è stato possibile aggiornare le notifiche dei commenti.'));
-            return $this->goBack(\Yii::$app->request->referrer);
+            if (Yii::$app->request->isAjax) return true;
+            else return $this->goBack(\Yii::$app->request->referrer);
         }
         \Yii::$app->getSession()->addFlash('success', \Yii::t('app', 'Le notifiche dei commenti sono state aggiornate con successo.'));
-        return $this->goBack(\Yii::$app->request->referrer);
+        if (Yii::$app->request->isAjax) return true;
+        else return $this->goBack(\Yii::$app->request->referrer);
 
     }
 
@@ -476,7 +588,8 @@ class CommentController extends CrudController
      * @param int|null $model_context_id
      * @return void
      */
-    private function enableCommentNotification(string $model_context_classname, int $model_context_id) {
+    private function enableCommentNotification(string $model_context_classname, int $model_context_id)
+    {
         if (!is_null($model_context_classname) && !is_null($model_context_id)) {
 
             $model = CommentsUtility::getCommentNotificationUser(
@@ -486,7 +599,7 @@ class CommentController extends CrudController
             );
             if (empty($model)) {
                 $model = new \open20\amos\comments\models\base\CommentNotificationUsers();
-                $model->user_id =  Yii::$app->user->id;
+                $model->user_id = Yii::$app->user->id;
                 $model->context_model_class_name = $model_context_classname;
                 $model->context_model_id = $model_context_id;
                 $model->enable = true;
@@ -498,7 +611,8 @@ class CommentController extends CrudController
     /**
      * @param false $write
      */
-    public function actionAdjustBells($write = false){
+    public function actionAdjustBells($write = false)
+    {
         CommentsUtility::scannAllModelsForAdjustBells($write);
     }
 

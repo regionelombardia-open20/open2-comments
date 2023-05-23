@@ -72,7 +72,7 @@ class CommentReplyController extends CrudController
                     [
                         'allow' => true,
                         'actions' => [
-                            'create-ajax'
+                            //'create-ajax'
                         ],
                         'roles' => ['COMMENTS_ADMINISTRATOR', 'COMMENTS_CONTRIBUTOR']
                     ]
@@ -178,7 +178,7 @@ class CommentReplyController extends CrudController
         if (!$this->model->validate()) {
             return [
                 'error' => [
-                    'msg' => AmosComments::t('amoscomments', 'Validation errors! Check the data entered.')
+                    'msg' => reset($this->model->getFirstErrors())//AmosComments::t('amoscomments', 'Validation errors! Check the data entered.')
                 ],
             ];
         }

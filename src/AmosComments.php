@@ -173,7 +173,26 @@ class AmosComments extends AmosModule implements ModuleInterface, BootstrapInter
      *
      * @var boolean
      */
-    public $bellNotificationEnabledClasses = [];
+    public $bellNotificationEnabledClasses = [
+        'open20\amos\community\models\Community'
+    ];
+    
+    /**
+     * @var string List of the allowed extensions for the upload of files.
+     */
+    public $whiteListFilesExtensions = ['csv', 'doc', 'docx', 'pdf', 'rtf', 'txt', 'xls', 'xlsx', 'odt'];
+
+    /**
+     * @var string List of the allowed mime types.
+     */
+    public $mimeTypes = '';
+
+    /**
+     * Option to disable the render of 'banner-cta' box for guest in CommentsWidget.
+     * Enabled by default.
+     * @var bool
+     */
+    public $disableBannerCtaForGuest = false;
 
     /**
      * @return string

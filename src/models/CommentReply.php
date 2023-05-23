@@ -62,14 +62,17 @@ class CommentReply extends \open20\amos\comments\models\base\CommentReply
     public function rules()
     {
         $maxCommentAttachments = 0;
+        $mimeTypes = '';
 
         /** @var AmosComments $commentsModule */
         $commentsModule = \Yii::$app->getModule(AmosComments::getModuleName());
         if(isset($commentsModule)) {
             $maxCommentAttachments = $commentsModule->maxCommentAttachments;
+            if($commentsModule->hasProperty(mimeTypes))
+                $mimeTypes = $commentsModule->mimeTypes;
         }
         return ArrayHelper::merge(parent::rules(), [
-            [['commentReplyAttachments'], 'file', 'maxFiles' => $maxCommentAttachments],
+            [['commentReplyAttachments'], 'file', 'maxFiles' => $maxCommentAttachments, 'mimeTypes'=>$mimeTypes],
         ]);
     }
     

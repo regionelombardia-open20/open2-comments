@@ -31,7 +31,7 @@ class CommentSearch extends Comment
             [['comment_text', 'context', 'created_at', 'updated_at', 'deleted_at'], 'safe'],
         ];
     }
-    
+
     /**
      * @inheritdoc
      */
@@ -40,19 +40,19 @@ class CommentSearch extends Comment
         // bypass scenarios() implementation in the parent class
         return Model::scenarios();
     }
-    
+
     public function search($params)
     {
         $query = Comment::find();
-        
+
         $dataProvider = new ActiveDataProvider([
             'query' => $query,
         ]);
-        
+
         if (!($this->load($params) && $this->validate())) {
             return $dataProvider;
         }
-        
+
         $query->andFilterWhere([
             'id' => $this->id,
             'context_id' => $this->context_id,
@@ -64,9 +64,9 @@ class CommentSearch extends Comment
             'updated_by' => $this->updated_by,
             'deleted_by' => $this->deleted_by,
         ]);
-        
+
         $query->andFilterWhere(['like', 'comment_text', $this->comment_text]);
-        
+
         return $dataProvider;
     }
 }

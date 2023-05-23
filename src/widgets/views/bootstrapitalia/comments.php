@@ -33,7 +33,10 @@ foreach ($comments as $k => $comment) :
             <p class="mt-0 mb-2">
                 <small><a href="/<?=AmosAdmin::getModuleName()?>/user-profile/view?id=<?= $comment->createdUserProfile->id ?>"><?= $comment->createdUserProfile->nomeCognome ?></a> <span class="text-muted"><?= \Yii::$app->formatter->asDatetime($comment->created_at) ?></span></small>
             </p>
-            <?= \Yii::$app->formatter->asHtml($comment->comment_text) ?>
+            <?= \Yii::$app->formatter->asHtml($comment->comment_text,[
+                'HTML.SafeIframe' => true,
+                'Attr.AllowedFrameTargets' => '_blank',
+            ]); ?>
             <?php $commentAttachments = $comment->getCommentAttachmentsForItemView(); ?>
             <?php if (count($commentAttachments) > 0) { ?>
                 <div class="p-3 lightgrey-bg-c1  rounded">

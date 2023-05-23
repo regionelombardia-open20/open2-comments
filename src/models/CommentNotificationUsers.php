@@ -42,9 +42,9 @@ class CommentNotificationUsers extends \open20\amos\comments\models\base\Comment
         return ArrayHelper::merge(parent::attributeLabels(), []);
     }
 
-    public static function getEditFields()
+    public function getEditFields()
     {
-        $labels = self::attributeLabels();
+        $labels = $this->attributeLabels();
 
         return [
             [
