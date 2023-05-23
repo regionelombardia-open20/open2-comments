@@ -27,6 +27,7 @@ class CommentsDesignAsset extends AssetBundle
      * @inheritdoc
      */
     public $css = [
+
     ];
 
     /**

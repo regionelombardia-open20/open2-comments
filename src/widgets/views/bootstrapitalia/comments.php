@@ -18,11 +18,11 @@ Pjax::begin([
 
 <?php
 $prev[-1] = 'bk-contribute';
-foreach ($comments as $k => $comment):
-    ?>
+foreach ($comments as $k => $comment) :
+?>
     <?php
     /** @var \open20\amos\comments\models\Comment $comment */
-    $prev[$k]           = 'comment_id'.$comment->id;
+    $prev[$k]           = 'comment_id' . $comment->id;
     ?>
     <div class="media border-bottom mb-4">
         <div class="avatar size-sm mr-2">
@@ -35,42 +35,54 @@ foreach ($comments as $k => $comment):
             <?= \Yii::$app->formatter->asHtml($comment->comment_text) ?>
             <?php $commentAttachments = $comment->getCommentAttachmentsForItemView(); ?>
             <?php if (count($commentAttachments) > 0) { ?>
-                <p>Allegati</p>
-                <?php
-                foreach ($commentAttachments as $k => $v) {
-                    $urlDelete = \yii\helpers\Url::to([
-                            '/'.FileModule::getModuleName().'/file/delete',
+                <div class="p-3 lightgrey-bg-c1  rounded">
+                    <p class="h6 text-uppercase">
+                        <svg class="icon icon-xs">
+                            <use xlink:href="<?= $currentAsset->baseUrl ?>/sprite/material-sprite.svg#ic_attach_file"></use>
+                        </svg>
+                        Allegati
+                    </p>
+                    <?php
+                    foreach ($commentAttachments as $k => $v) {
+                        $urlDelete = \yii\helpers\Url::to([
+                            '/' . FileModule::getModuleName() . '/file/delete',
                             'id' => $v->id,
                             'item_id' => $comment->id,
                             'model' => get_class($comment),
                             'attribute' => 'commentAttachments'
-                    ]);
+                        ]);
                     ?>
-                <p>
-                        <a href="<?= $v->getWebUrl() ?>" title="<?= $v->name ?>">
-                            <?= $v->name ?>
-                        </a>
-                        <?php if (\Yii::$app->user->can('COMMENT_UPDATE', ['model' => $comment])) { ?>
-                            <a href="<?= $urlDelete ?>" title="<?= AmosComments::t('amoscomments', 'Cancella') ?>" data-confirm="<?=
-                            AmosComments::t('amoscomments', 'Sei sicuro di voler cancellare l\'allegato?')
-                            ?>">
-                                <span class="rounded-icon rounded-white">
-                                    <svg class="icon icon-dark">
-                                    <use xlink:href="<?= $currentAsset->baseUrl ?>/sprite/material-sprite.svg#ic_delete"></use>
-                                    </svg>
-                                </span>
-                                <span class="sr-only"><?= AmosComments::t('amoscomments', 'Cancella allegato') ?></span>
+                        <span class="badge badge-pill badge-light px-3">
+                            <a href="<?= $v->getWebUrl() ?>" data-toggle="tooltip" title="Scarica <?= $v->name ?>">
+                                <?= $v->name ?>
                             </a>
-                        <?php } ?>
-                    </p>
-                    <?php
-                }
+                            <?php if (\Yii::$app->user->can('COMMENT_UPDATE', ['model' => $comment])) { ?>
+                                <a href="<?= $urlDelete ?>" data-toggle="tooltip" title="<?= AmosComments::t('amoscomments', 'Cancella') ?>" data-confirm="<?=
+                                                                                                                                                            AmosComments::t('amoscomments', 'Sei sicuro di voler cancellare l\'allegato?')
+                                                                                                                                                            ?>">
+                                    <span class="ml-1">
+                                        <svg class="icon icon-xs">
+                                            <use xlink:href="<?= $currentAsset->baseUrl ?>/sprite/material-sprite.svg#ic_close"></use>
+                                        </svg>
+                                    </span>
+                                    <span class="sr-only"><?= AmosComments::t('amoscomments', 'Cancella allegato') ?></span>
+                                </a>
+                        </span>
+                    <?php } ?>
+
+
+                <?php
+                    }
+                ?>
+                </div>
+            <?php
             }
             ?>
+
             <p class="mt-2">
                 <small>
                     <?php if (\Yii::$app->user->can('COMMENT_UPDATE', ['model' => $comment])) { ?>
-                        <a href="<?= "/".AmosComments::getModuleName()."/comment/update?id=".$comment->id."&noAttach=$no_attach&url=".\yii\helpers\Url::current()."#comment_id".$comment->id ?>" class="mr-3">
+                        <a href="<?= "/" . AmosComments::getModuleName() . "/comment/update?id=" . $comment->id . "&noAttach=$no_attach&url=" . \yii\helpers\Url::current() . "#comment_id" . $comment->id ?>" class="mr-3">
                             <?=
                             AmosComments::t('amoscomments', 'Modifica')
                             ?>
@@ -78,11 +90,11 @@ foreach ($comments as $k => $comment):
                     <?php } ?>
                     <?php if (\Yii::$app->user->can('COMMENT_DELETE', ['model' => $comment])) { ?>
                         <a class="text-danger" href="<?=
-                           "/".AmosComments::getModuleName()."/comment/delete?id=".$comment->id."&url=".\yii\helpers\Url::current()."#".$prev[$k
-                           - 1]
-                           ?>"><?=
-                               AmosComments::t('amoscomments', 'Elimina')
-                               ?>
+                                                        "/" . AmosComments::getModuleName() . "/comment/delete?id=" . $comment->id . "&url=" . \yii\helpers\Url::current() . "#" . $prev[$k
+                                                            - 1]
+                                                        ?>"><?=
+                                                            AmosComments::t('amoscomments', 'Elimina')
+                                                            ?>
                         </a>
                     <?php } ?>
                 </small>

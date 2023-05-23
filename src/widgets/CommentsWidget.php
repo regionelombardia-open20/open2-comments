@@ -32,14 +32,46 @@ class CommentsWidget extends Widget
     public $model;
     public $namespaceAssetBootstrapitalia = 'amos\planner\assets\BootstrapItaliaAsset';
     public $noAttach                      = 0;
-    public $frontend = false;
-    public $layoutInverted = false;
-    public $urlRegistrazione = null;
-    public $performance = false;
-    public $defaultLimit = 10;
-    public $pageSize = 5;
-    public $useDesign = false;
-    public $moderator = false;
+    public $frontend                      = false;
+    public $layoutInverted                = false;
+    public $urlRegistrazione              = null;
+    public $performance                   = false;
+    public $defaultLimit                  = 10;
+    public $pageSize                      = 5;
+    public $useDesign                     = false;
+    public $moderator                     = false;
+
+    /**
+     *
+     * @var array $puglins
+     */
+    public $plugins = [
+        /*
+          "advlist autolink lists charmap print preview anchor",
+          "searchreplace visualblocks code fullscreen code",
+          "insertdatetime media table contextmenu paste textcolor image insertdatetime",
+          "placeholder", */
+        "contextmenu paste link",
+    ];
+
+    /**
+     *
+     * @var string $toolbar
+     */
+    public $toolbar   = "fullscreen | undo redo | bold italic strikethrough | link | removeformat";
+    
+    public $rteMobile = [
+        'menubar' => true,
+        'plugins' => ['autosave', 'autolink'],
+        'theme' => 'mobile',
+        'content_style' => 'body {background-color: white;}',
+        'toolbar' => [
+            'fullscreen', 'undo redo', 
+            'link', 'removeformat'
+        ],
+    ];
+
+    public $useRTE    = false;
 
     /**
      * @var array $options Options array for the widget (ie. html options)
@@ -87,6 +119,9 @@ class CommentsWidget extends Widget
 
     public function run()
     {
+        if(\Yii::$app->user->isGuest){
+            return $this->render('comments-widget/banner-cta');
+        }
         $content = preg_replace_callback("/{\\w+}/",
             function ($matches) {
             $content = $this->renderSection($matches[0]);
@@ -134,11 +169,11 @@ class CommentsWidget extends Widget
      */
     public function commentSection()
     {
-        if($this->frontend == true){
+        if ($this->frontend == true) {
             return $this->render('frontend/comment', [
                     'widget' => $this
             ]);
-        } else if($this->useDesign === true){
+        } else if ($this->useDesign === true) {
             return $this->render('design/comment', [
                     'widget' => $this
             ]);
@@ -159,16 +194,16 @@ class CommentsWidget extends Widget
      */
     public function commentsSection()
     {
-        $module = \Yii::$app->getModule('comments'); 
+        $module = \Yii::$app->getModule('comments');
         /** @var \yii\db\ActiveQuery $query */
         $query  = Comment::find()->andWhere(['context' => $this->model->className(), 'context_id' => $this->model->id])->orderBy([
             'created_at' => $module->orderDisplayComments]);
 
         /** @var \open20\amos\comments\models\Comment $lastComment */
         $lastComment = Comment::find()->andWhere(['context' => $this->model->className(), 'context_id' => $this->model->id])->orderBy([
-            'created_at' => $module->orderDisplayComments])->limit(1)->one();
+                'created_at' => $module->orderDisplayComments])->limit(1)->one();
 
-        if($this->performance == true){
+        if ($this->performance == true) {
             $query->limit($this->defaultLimit);
             $comments = $query->all();
         } else if ($module->disablePagination == true) {
@@ -179,8 +214,8 @@ class CommentsWidget extends Widget
             $pages->setPageSize($this->pageSize);
             $comments = $query->offset($pages->offset)->limit($pages->limit)->all();
         }
-        if($this->frontend == true){
-             return $this->render('frontend/comments',
+        if ($this->frontend == true) {
+            return $this->render('frontend/comments',
                     [
                     'widget' => $this,
                     'pages' => $pages,
@@ -188,13 +223,13 @@ class CommentsWidget extends Widget
                     'lastComment' => $lastComment,
                     'no_attach' => $this->noAttach,
             ]);
-        } else if($this->useDesign === true){
-              return $this->render('design/comments',
+        } else if ($this->useDesign == true) {
+            return $this->render('design/comments',
                     [
                     'widget' => $this,
                     'pages' => $pages,
                     'comments' => $comments,
-                    'lastComment' => $lastComment,                    
+                    'lastComment' => $lastComment,
                     'no_attach' => $this->noAttach,
             ]);
         } else if (property_exists(get_class($this->model), 'bootstrapItalia') && $this->model->bootstrapItalia == true) {

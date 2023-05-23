@@ -89,7 +89,7 @@ class PartecipantsNotification extends BaseObject
     {
         $users = $this->getDiscussionsRecipients($contextModel);
 
-        if (empty($users) && method_exists($contextModel, 'getRecipients')) {
+        if (empty($users) && $contextModel->hasMethod('getRecipients')) {
             $users = $contextModel->getRecipients();
         }
         if (empty($users)) {

@@ -89,7 +89,7 @@ Comments.saveComment = function (context_id, context, csrfKey, csrfValue) {
                     Comments.reloadComments();
                     comment_textarea.val('');
                     Comments.emptyRedactorEditor(comment_textarea.attr('id'));
-                    $('#commentAttachments').fileinput('clear');
+                    //$('#commentAttachments').fileinput('clear');
                 }
             },
             error: function (response) {

@@ -23,7 +23,13 @@ use open20\amos\core\helpers\Html;
 $sendNotifyCheckBox = '';
 if ($enableUserSendMailCheckbox) {
     if ($displayNotifyCheckBox) {
-        $sendNotifyCheckBox = Html::checkbox($checkboxName, true, ['label' => ' ' . AmosComments::t('amoscomments', '#checkbox_send_notify')]);
+        $sendNotifyCheckBox = Html::checkbox(
+            $checkboxName,
+            true,
+            [
+                'label' => ' ' . AmosComments::t('amoscomments', '#checkbox_send_notify'),
+            ]
+        );
     } else {
         $sendNotifyCheckBox = Html::hiddenInput($checkboxName, 1);
     }

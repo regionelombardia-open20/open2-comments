@@ -41,7 +41,7 @@ $commentsModule = Yii::$app->getModule(AmosComments::getModuleName());
                 'enctype' => 'multipart/form-data'
             ]
     ]);
-    ?>  
+    ?>
 
     <div class="row">
         <?php if (!empty($no_attach)) { ?>
@@ -66,7 +66,7 @@ $commentsModule = Yii::$app->getModule(AmosComments::getModuleName());
                 ?>
             </div>
 
-            <?php if ($commentsModule->modelCanDoIt($class, 'enableUserSendAttachment')) : ?>
+            <?php if ($commentsModule->modelCanDoIt($class, 'enableUserSendAttachment') || $commentsModule->enableCanDoIt == false) : ?>
             <div class="col-lg-4 col-xs-12">
                 <?=
                 AttachmentsWidget::widget([
@@ -87,7 +87,7 @@ $commentsModule = Yii::$app->getModule(AmosComments::getModuleName());
         <?php } ?>
     </div>
 
-    <?php if ($commentsModule->enableUserSendMailCheckbox && $commentsModule->modelCanDoIt($class, 'enableUserSendMailCheckbox') && (Yii::$app->controller->action->id == 'create')): ?>
+    <?php if ($commentsModule->enableCanDoIt == false || ($commentsModule->enableUserSendMailCheckbox && $commentsModule->modelCanDoIt($class, 'enableUserSendMailCheckbox') && (Yii::$app->controller->action->id == 'create'))): ?>
         <div class="row">
             <div class="col-xs-12">
                 <?=

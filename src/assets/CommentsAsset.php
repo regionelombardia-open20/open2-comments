@@ -28,7 +28,8 @@ class CommentsAsset extends AssetBundle
      * @inheritdoc
      */
     public $css = [
-        'less/comments.less'
+        'less/comments.less',
+        'less/comments_design_bi.less',
     ];
 
     /**

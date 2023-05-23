@@ -145,8 +145,20 @@ class AmosComments extends AmosModule implements ModuleInterface, BootstrapInter
      * @var bool $enableModerator
      */
     public $enableModerator     = false;
-    
+
+    /**
+     * @var bool
+     */
+    public $enableAttachmentInComment = true;
+
+
     private static $registerEvent = false;
+
+    /**
+     *
+     * @var type
+     */
+    public $enableCanDoIt = true;
 
     /**
      * @return string

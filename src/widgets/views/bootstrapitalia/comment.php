@@ -20,7 +20,7 @@ $('#contribute-btn').on('click', function (event) {
 ";
 $this->registerJs($js, View::POS_READY);
 
-$class= $widget->model->className();
+$class = $widget->model->className();
 
 /** @var AmosComments $commentsModule */
 $commentsModule = Yii::$app->getModule(AmosComments::getModuleName());
@@ -39,7 +39,8 @@ if (Yii::$app->getUser()->can('COMMENT_CREATE', ['model' => $widget->model])) {
         }
     }
 
-    $displayNotifyCheckBox = $displayNotifyCheckBox&& $commentsModule->modelCanDoIt($class, 'enableUserSendMailCheckbox');
+    $displayNotifyCheckBox = $displayNotifyCheckBox && $commentsModule->modelCanDoIt($class,
+            'enableUserSendMailCheckbox');
 
     $openAccordion = false;
 
@@ -65,6 +66,14 @@ if (Yii::$app->getUser()->can('COMMENT_CREATE', ['model' => $widget->model])) {
             ],
             'clientOptions' => [
                 'placeholder' => $widget->options['commentPlaceholder'],
+                'plugins' => [
+                    "advlist autolink lists link charmap print preview anchor",
+                    "searchreplace visualblocks code fullscreen code",
+                    "insertdatetime media table contextmenu paste textcolor image insertdatetime",
+                    "placeholder",
+                    "contextmenu paste",
+                    "mention"
+                ],
             ],
     ]);
     ?>
@@ -87,22 +96,23 @@ if (Yii::$app->getUser()->can('COMMENT_CREATE', ['model' => $widget->model])) {
                         <label class="custom-file-label" for="commentAttachments">Choose file</label>
                       </div>
                     </form>-->
-                    <?php if($commentsModule->modelCanDoIt($class, 'enableUserSendAttachment')) : ?>
-                    <form class="md-form" action="#">
-                        <div class="file-field">
-                            <div class="float-left">
-                                <input type="file"  name="commentAttachments" class="btn btn-outline-secondary btn-xs custom-file-input" id="commentAttachments" multiple>
+                    <?php if ($commentsModule->modelCanDoIt($class, 'enableUserSendAttachment')  && $commentsModule->enableAttachmentInComment) : ?>
+                        <form class="md-form" action="#">
+                            <div class="file-field">
+                                <div class="float-left">
+                                    <input type="file"  name="commentAttachments" class="btn btn-outline-secondary btn-xs custom-file-input" id="commentAttachments" multiple>
+                                </div>
                             </div>
-                        </div>
-                    </form>
+                        </form>
                     <?php endif; ?>
                 </div>
             </div>
             <div class="d-flex">
-                <button id="contribute-btn" type="button" class="btn btn-outline-secondary btn-xs">
+            <div>
+                <button id="contribute-btn" type="button" class="btn btn-outline-primary btn-xs">
                     <?= AmosComments::t('amoscomments', 'Aggiungi commento') ?>
                 </button>
-
+                </div>
                 <div class="form-check form-check-inline ml-auto">
                     <input id="send_notify_mail-1" type="checkbox" name="send_notify_mail" checked="checked" value="1">
                     <label for="send_notify_mail-1"><small> <?= AmosComments::t('amoscomments', 'Invia notifica') ?></small></label>

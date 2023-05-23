@@ -271,6 +271,7 @@ class CommentController extends CrudController
                     return $this->redirect($url);
                 }
                 return $this->redirect(BreadcrumbHelper::lastCrumbUrl());
+                
             } else {
                 Yii::$app->getSession()->addFlash('danger',
                     AmosComments::t('amoscomments', 'Comment not updated, check the data entered.'));
