@@ -11,7 +11,7 @@ $asset = CommentsAsset::register($this);
         <div class="row">
             <div class="col-md-9">
                 <h3 class="m-t-15"><strong><?= AmosComments::t('amoscomments', 'Vuoi essere sempre aggiornato?');?></strong></h3>
-                <p class="lead"><?= AmosComments::t('amoscomments',  'Partecipa attivamente, accedi o registrati a '); ?><?= Yii::$app->name ?></p>
+                <p class="lead"><?= AmosComments::t('amoscomments',  'Partecipa attivamente, accedi a '); ?><?= Yii::$app->name ?></p>
             </div>
             <div class="col-md-3 text-right m-t-20">
                 <a class="btn btn-lg btn-tertiary" href="<?= \Yii::$app->params['linkConfigurations']['loginLinkCommon'] ?>" title="Partecipa"><?=\Yii::t('app', 'Partecipa');?></a>
