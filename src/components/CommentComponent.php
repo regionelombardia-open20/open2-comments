@@ -12,10 +12,13 @@ namespace open20\amos\comments\components;
 
 use open20\amos\comments\AmosComments;
 use open20\amos\comments\models\CommentInterface;
+use open20\amos\comments\utility\CommentsUtility;
 use open20\amos\comments\widgets\CommentsWidget;
+use open20\amos\core\record\Record;
 use Yii;
 use yii\base\Component;
 use yii\base\Event;
+use yii\helpers\VarDumper;
 
 /**
  * Class CommentComponent
@@ -81,4 +84,16 @@ class CommentComponent extends Component implements CommentComponentInterface
         }
         return false;
     }
+
+    /**
+     * @param \yii\base\Event $event
+     */
+    public function addCreatorEnableNotificationUser(Event $event)
+    {
+        $model = $event->sender;
+        if (!empty($model) && ($model instanceof Record) && isset($model->attributes['created_by']) && isset($model->attributes['id'])) {
+            CommentsUtility::setCommentNotificationUser($model::className(), $model->id, $model->created_by, true);
+        }
+    }
+
 }

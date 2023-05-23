@@ -23,7 +23,7 @@ class m210805_103000_create_comment_notification_user extends AmosMigrationTable
     {
         $this->tableName = '{{%comment_notification_users%}}';
     }
-
+    
     /**
      * @inheritdoc
      */
@@ -37,7 +37,7 @@ class m210805_103000_create_comment_notification_user extends AmosMigrationTable
             'enable' => $this->boolean()->defaultValue(null),
         ];
     }
-
+    
     /**
      * @inheritdoc
      */

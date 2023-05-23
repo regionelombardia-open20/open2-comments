@@ -10,8 +10,10 @@
 
 namespace open20\amos\comments\widgets;
 
+use open20\amos\comments\models\CommentNotificationUsers;
 use open20\amos\comments\AmosComments;
 use open20\amos\comments\models\Comment;
+use open20\amos\comments\utility\CommentsUtility;
 use yii\base\Widget;
 use yii\data\Pagination;
 
@@ -59,14 +61,14 @@ class CommentsWidget extends Widget
      * @var string $toolbar
      */
     public $toolbar   = "fullscreen | undo redo | bold italic strikethrough | link | removeformat";
-    
+
     public $rteMobile = [
         'menubar' => true,
         'plugins' => ['autosave', 'autolink'],
         'theme' => 'mobile',
         'content_style' => 'body {background-color: white;}',
         'toolbar' => [
-            'fullscreen', 'undo redo', 
+            'fullscreen', 'undo redo',
             'link', 'removeformat'
         ],
     ];
@@ -214,6 +216,14 @@ class CommentsWidget extends Widget
             $pages->setPageSize($this->pageSize);
             $comments = $query->offset($pages->offset)->limit($pages->limit)->all();
         }
+
+        // check if notification bell is enabled or not for this user:
+        $notificationUserStatus = CommentsUtility::getCommentNotificationUserStatus(
+            $this->model::className(),
+            $this->model->id,
+            \Yii::$app->user->id
+        );
+
         if ($this->frontend == true) {
             return $this->render('frontend/comments',
                     [
@@ -249,7 +259,9 @@ class CommentsWidget extends Widget
                     'pages' => $pages,
                     'comments' => $comments,
                     'lastComment' => $lastComment,
+                    'notificationUserStatus' => $notificationUserStatus
             ]);
         }
     }
+
 }

@@ -19,6 +19,7 @@ use open20\amos\core\icons\AmosIcons;
 use open20\amos\core\utilities\ModalUtility;
 use yii\web\View;
 use open20\amos\news\models\News;
+use yii\helpers\Url;
 
 CommentsAsset::register($this);
 
@@ -80,6 +81,9 @@ ModalUtility::createAlertModal([
         'checkboxName' => 'send_notify_mail',
         'viewTypePosition' => Comment::VIEW_TYPE_POSITION
     ]);
+
+    $scope = \open20\amos\cwh\AmosCwh::getInstance()->getCwhScope();
+    $tags = [];
 ?>
     <div id='bk-contribute'>
    <?php $redactorComment = Html::tag(
@@ -96,9 +100,15 @@ ModalUtility::createAlertModal([
                     ],
                     'clientOptions' => [
                         'placeholder' => $widget->options['commentPlaceholder'],
-                        'plugins' => $widget->plugins, 
+                        'plugins' => $widget->plugins,
                         'toolbar' => $widget->toolbar,
                         'mobile' => $widget->rteMobile,
+                        'mentions' => [
+                            'url' => Url::to(['/admin/user-profile/find-name-user-by-cwh',
+                                        'className' => $widget->model::className(),
+                                        'model_id' => $widget->model->id,
+                                    ])
+                        ]
                     ],
                 ]), ['class' => '']),
             [
@@ -149,12 +159,16 @@ ModalUtility::createAlertModal([
             <div class="col-xs-12 m-b-15 m-t-15">
                 <?= $redactorComment ?>
             </div>
-            <div class="col-xs-4 box-upload-file">
+            <div class="col-xs-6 box-upload-file">
                 <?= $attachmComment ?>
             </div>
-            <div class="col-xs-8 cta-comment flexbox flexbox-row">
-                <div class="m-r-15"><?= $notifyCheckbox ?></div>
-                <?= $btnComment ?>
+            <div class="col-xs-12 cta-comment">
+                <div class="row flexbox">
+                    <div class="col-xs-8"><?= $notifyCheckbox ?></div>
+                    <div class="col-xs-4">
+                        <?= $btnComment ?>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

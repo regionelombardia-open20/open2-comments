@@ -23,6 +23,7 @@ use yii\web\View;
 use yii\widgets\Pjax;
 use open20\amos\news\models\News;
 use open20\amos\admin\AmosAdmin;
+use yii\helpers\Url;
 
 $asset = CommentsAsset::register($this);
 
@@ -31,6 +32,7 @@ $asset = CommentsAsset::register($this);
  * @var \open20\amos\comments\models\Comment[] $comments
  * @var \open20\amos\comments\models\CommentReply[] $commentReplies
  * @var \yii\data\Pagination $pages
+ * @var boolean|null $notificationUserStatus
  */
 $js = <<<JS
     $('#comments_anchor').on('click', '.reply-to-comment', function (event) {
@@ -89,9 +91,58 @@ $displayNotifyCheckBox = $displayNotifyCheckBox && $commentsModule->modelCanDoIt
         ?>
         <?php if (!empty($comments)) { ?>
         <div class="comment-content-true">
-        <?=
-        (!empty($comments)) ? Html::tag('h3', $widget->options['lastCommentsTitle'], ['class' => 'subtitle-comments']) : ''
-        ?>
+            <div class="subtitle-comments">
+                <?=
+                (!empty($comments)) ? Html::tag('h3', $widget->options['lastCommentsTitle'], ['class' => 'subtitle-comments']) : ''
+                ?>
+
+
+                    <?php
+                    if (in_array($widget->model->className(), AmosComments::instance()->bellNotificationEnabledClasses)):
+                        ?>
+                        <div class="subtitle-text-container">
+                        <?php
+                        if ($notificationUserStatus):
+                            $callToAction = Url::toRoute([
+                                '/comments/comment/comment-notification-user',
+                                'context' => $widget->model->className(),
+                                'contextId' => $widget->model->id,
+                                'enable' => 0,
+                            ]);
+                            ?>
+                            <a class="icon-link-black" href="<?= $callToAction ?>" title="Notifiche abilitate, clicca qui per disabilitarle">
+                                <span class="am am-notifications-add m-r-5" style="font-size: 24px;"></span>
+                            </a>
+
+                            <span class="m-r-5"> <?= AmosComments::t('amoscomments', '#able-notify') ?></span>
+                            <a href="<?= $callToAction ?>" title="Notifiche abilitate, clicca qui per disabilitarle"> <?= AmosComments::t('amoscomments', '#disable-notify-link') ?></a>
+                        <?php
+                        else:
+                            $callToAction = Url::toRoute([
+                                '/comments/comment/comment-notification-user',
+                                'context' => $widget->model->className(),
+                                'contextId' => $widget->model->id,
+                                'enable' => 1,
+                            ]);
+                            ?>
+                            <a class="icon-link-black" href="<?= $callToAction ?>" title="Notifiche disabilitate, clicca qui per abilitarle">
+                                <svg class="m-r-5" style="width:24px;height:24px" viewBox="0 0 24 24">
+                                    <path fill="currentColor" d="M17.5 13A4.5 4.5 0 0 0 13 17.5A4.5 4.5 0 0 0 17.5 22A4.5 4.5 0 0 0 22 17.5A4.5 4.5 0 0 0 17.5 13M17.5 14.5A3 3 0 0 1 20.5 17.5A3 3 0 0 1 20.08 19L16 14.92A3 3 0 0 1 17.5 14.5M14.92 16L19 20.08A3 3 0 0 1 17.5 20.5A3 3 0 0 1 14.5 17.5A3 3 0 0 1 14.92 16M12 2C10.9 2 10 2.9 10 4C10 4.1 10 4.19 10 4.29C7.12 5.14 5 7.82 5 11V17L3 19V20H11.5A6.5 6.5 0 0 1 11 17.5A6.5 6.5 0 0 1 17.5 11A6.5 6.5 0 0 1 19 11.18V11C19 7.82 16.88 5.14 14 4.29C14 4.19 14 4.1 14 4C14 2.9 13.11 2 12 2M10 21C10 22.11 10.9 23 12 23C12.5 23 12.97 22.81 13.33 22.5A6.5 6.5 0 0 1 12.03 21Z" />
+                                </svg>
+                            </a>
+
+                            <span class="m-r-5"> <?= AmosComments::t('amoscomments', '#disable-notify') ?></span>
+                            <a href="<?=$callToAction ?>" title="Notifiche disabilitate, clicca qui per abilitarle"> <?= AmosComments::t('amoscomments', '#able-notify-link') ?></a>
+
+                        <?php
+                        endif;
+                        ?>
+                        </div>
+                        <?php
+                    endif;
+                    ?>
+
+            </div>
         <?php
         $url                   = \Yii::$app->params['platform']['backendUrl'].'/img/img_default.jpg';
 
@@ -123,12 +174,31 @@ $displayNotifyCheckBox = $displayNotifyCheckBox && $commentsModule->modelCanDoIt
                 <div class="answer-details media-body">
                     <div class="col-xs-10 nop">
                         <div>
-                            <strong><?=
-                                (!empty($createdUserProfile) ?
-                                    Html::a($createdUserProfile,
-                                        [(\Yii::$app->user->isGuest ? '#' : '/'.AmosAdmin::getModuleName().'/user-profile/view'),
-                                        'id' => $createdUserProfile->id]) : '#### ####')
-                                ?></strong>
+                            <strong>
+                                <?php if (!empty($createdUserProfile)): ?>
+                                    <?php if (isset(\Yii::$app->params['disableLinkContentCreator']) && (\Yii::$app->params['disableLinkContentCreator'] === true)): ?>
+                                        <?= $createdUserProfile; ?>
+                                    <?php else: ?>
+                                        <?php
+//                                          OBSOLETO
+//                                        echo Html::a(
+//                                            $createdUserProfile,
+//                                            ['/admin/user-profile/view', 'id' => $createdUserProfile->id]
+//                                        );
+                                        ?>
+                                        <?=
+                                        (!empty($createdUserProfile) ?
+                                            Html::a($createdUserProfile,
+                                                [(\Yii::$app->user->isGuest ? '#' : '/'.AmosAdmin::getModuleName().'/user-profile/view'),
+                                                    'id' => $createdUserProfile->id]) : '#### ####')
+                                        ?>
+                                    <?php endif; ?>
+                                <?php else: ?>
+                                    <?= '#### ####'; ?>
+                                <?php endif; ?>
+
+
+                        </strong>
                         </div>
                         <small> <?= Yii::$app->getFormatter()->asDatetime($comment->created_at) ?></small>
                     </div>

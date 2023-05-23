@@ -10,21 +10,29 @@
 
 namespace open20\amos\comments\controllers;
 
-use open20\amos\comments\AmosComments;
-use open20\amos\comments\base\PartecipantsNotification;
-use open20\amos\comments\exceptions\CommentsException;
-use open20\amos\comments\models\Comment;
-use open20\amos\comments\models\search\CommentSearch;
-use open20\amos\core\controllers\CrudController;
-use open20\amos\core\helpers\BreadcrumbHelper;
-use open20\amos\core\helpers\Html;
-use open20\amos\core\icons\AmosIcons;
-use open20\amos\notificationmanager\utility\NotifyUtility;
+use DeepCopyTest\Matcher\Y;
+use open20\amos\comments\utility\CommentsUtility;
 use Yii;
-use yii\filters\AccessControl;
+use Exception;
+use yii\helpers\Url;
 use yii\filters\VerbFilter;
 use yii\helpers\ArrayHelper;
-use yii\helpers\Url;
+use yii\filters\AccessControl;
+use open20\amos\core\helpers\Html;
+use open20\amos\core\record\Record;
+use open20\amos\core\icons\AmosIcons;
+use open20\amos\core\utilities\Email;
+use open20\amos\comments\AmosComments;
+use open20\amos\comments\models\Comment;
+use open20\amos\core\helpers\BreadcrumbHelper;
+use open20\amos\core\controllers\CrudController;
+use open20\amos\comments\models\search\CommentSearch;
+use open20\amos\comments\exceptions\CommentsException;
+use open20\amos\comments\base\PartecipantsNotification;
+
+use open20\amos\notificationmanager\utility\NotifyUtility;
+use open20\amos\comments\models\CommentNotificationUsers;
+use open20\amos\admin\models\UserProfile;
 
 /**
  * Class CommentController
@@ -74,17 +82,26 @@ class CommentController extends CrudController
                             'allow' => true,
                             'actions' => [
                                 'create-ajax',
+                                'valid',
+                                'suspend',
                             ],
                             'roles' => ['COMMENTS_ADMINISTRATOR', 'COMMENTS_CONTRIBUTOR']
                         ],
                         [
                             'allow' => true,
                             'actions' => [
-                                'valid',
-                                'suspend',
+                                'comment-notification-user',
                             ],
-                            'roles' => ['COMMENTS_ADMINISTRATOR', 'COMMENTS_CONTRIBUTOR']
-                        ]
+                            'roles' => ['@']
+                        ],
+                        [
+                            'allow' => true,
+                            'actions' => [
+                                'adjust-bells',
+                            ],
+                            'roles' => ['ADMIN']
+                        ],
+
                     ]
                 ],
                 'verbs' => [
@@ -154,6 +171,8 @@ class CommentController extends CrudController
                 return $this->model;
             }
 
+            $this->enableCommentNotification($this->model->context, $this->model->context_id);
+
             return $this->redirect(Url::previous());
         } else {
             return $this->render('create', [
@@ -194,8 +213,26 @@ class CommentController extends CrudController
             ];
         }
 
+
+
+        // check if model values is change
+        // new and old comment text
+        $user_profile_ids = $this->extractTagginUserCommentText($this->model->comment_text, $this->model->getOldAttribute('comment_text'));
+
+        // send notification to user user_profile_ids
+        if( (null != $user_profile_ids) || (!empty($user_profile_ids)) ){
+
+            // // get model context
+            $modelContext = new $this->model->context;
+            $modelContext = $modelContext::find()->andWhere(['id' => $this->model->context_id])->one();
+
+            $user_profiles = UserProfile::find()->andWhere(['id' => $user_profile_ids])->all();
+            Record::sendEmailForUserProfiles($user_profiles, $modelContext, $this->model);
+        }
+
+
         if ($this->model->save()) {
-//            NotifyUtility::getNetworkNotificationConf()
+            //            NotifyUtility::getNetworkNotificationConf()
             /** @var AmosComments $commentsModule */
             $commentsModule = Yii::$app->getModule(AmosComments::getModuleName());
             if (!$commentsModule->enableUserSendMailCheckbox || ($commentsModule->enableUserSendMailCheckbox && isset($post['send_notify_mail'])
@@ -203,6 +240,9 @@ class CommentController extends CrudController
                 $partecipantsnotify = $this->getParticipantsNotificationInstance();
                 $partecipantsnotify->partecipantAlert($this->model);
             }
+
+            $this->enableCommentNotification($this->model->context, $this->model->context_id);
+
             return $this->model;
         } else {
             return [
@@ -264,14 +304,19 @@ class CommentController extends CrudController
         $this->setUpLayout('form');
         $this->model = $this->findModel($id);
         if ($this->model->load(Yii::$app->request->post()) && $this->model->validate()) {
+
             if ($this->model->save()) {
                 Yii::$app->getSession()->addFlash('success',
                     AmosComments::t('amoscomments', 'Comment successfully updated.'));
                 if (!empty($url)) {
                     return $this->redirect($url);
                 }
+
+                // enable notification for comments
+                $this->enableCommentNotification($this->model->context, $this->model->context_id);
+
                 return $this->redirect(BreadcrumbHelper::lastCrumbUrl());
-                
+
             } else {
                 Yii::$app->getSession()->addFlash('danger',
                     AmosComments::t('amoscomments', 'Comment not updated, check the data entered.'));
@@ -297,6 +342,70 @@ class CommentController extends CrudController
             ]);
         }
     }
+
+
+
+    /**
+     * @param Record $contextModel
+     * @return string
+     */
+    private function getSubject(Record $contextModel)
+    {
+        $content_subject = 'email'.DIRECTORY_SEPARATOR.'content_subject';
+
+        if ($this->commentsModule) {
+            if (is_array($this->commentsModule->htmlMailContentSubject)) {
+                $contextModelClassName = $contextModel->className();
+                if (!empty($this->commentsModule->htmlMailContentSubject[$contextModelClassName])) {
+                    $content_subject = $this->commentsModule->htmlMailContentSubject[$contextModelClassName];
+                } else {
+                    $content_subject = $this->commentsModule->htmlMailContentSubjectDefault;
+                }
+            } else {
+                $content_subject = $this->commentsModule->htmlMailContentSubject;
+            }
+        }
+
+        $subject = $this->appController->renderMailPartial($content_subject, ['contextModel' => $contextModel]);
+
+        return $subject;
+    }
+
+
+    /**
+     * Method to extract taggin user from comment_text (user_profile id)
+     *
+     * @param string | $new_text
+     *
+     * @return array | $new_tagging_user_id
+     */
+    public function extractTagginUserCommentText($new_text = null, $old_text = null){
+
+        $new_tagging_user_id = [];
+
+        // get all user_id from old text and all user_id from new text
+        $user_id_new = (array) Record::getMentionUserIdFromText($new_text);
+        $user_id_old = (array) Record::getMentionUserIdFromText($old_text);
+
+        // extract only different id user between new user id and old user id
+        $new_tagging_user_id = array_diff($user_id_new, $user_id_old);
+
+
+        // filtro gli utenti per quegli che hanno abilitato le notifiche per la tagatura degli utenti nei commenti
+        foreach ($new_tagging_user_id as $key => $user_profile_id) {
+
+            $user_profile = \open20\amos\admin\models\UserProfile::find()->andWhere(['id' => $user_profile_id])->one();
+
+            // remove all user_profile with notify_taggin_user_in_content
+            if( $user_profile && ($user_profile->notify_tagging_user_in_content == 0) ){
+                unset($new_tagging_user_id[$key]);
+            }
+        }
+
+        return $new_tagging_user_id;
+    }
+
+
 
     /**
      * The delete action deletes all the comment replies, if present, and then the comment.
@@ -340,4 +449,57 @@ class CommentController extends CrudController
         }
         return $this->redirect(Url::previous());
     }
+
+
+    /**
+     * Method to add the authenticated user to CommentDisabledNotificationUsers
+     *
+     * @return void | go back
+     */
+    public function actionCommentNotificationUser($context, $contextId, $enable){
+
+        $ret = CommentsUtility::setCommentNotificationUser($context,$contextId, Yii::$app->user->id, (bool)$enable);
+        if( !$ret ){
+            \Yii::$app->getSession()->addFlash('danger', \Yii::t('app', 'Errore! Non è stato possibile aggiornare le notifiche dei commenti.'));
+            return $this->goBack(\Yii::$app->request->referrer);
+        }
+        \Yii::$app->getSession()->addFlash('success', \Yii::t('app', 'Le notifiche dei commenti sono state aggiornate con successo.'));
+        return $this->goBack(\Yii::$app->request->referrer);
+
+    }
+
+    /**
+     * Method to enable comment notification for auth user
+     * Enable only if comment notification user not is set!
+     *
+     * @param string|null $model_context_classname
+     * @param int|null $model_context_id
+     * @return void
+     */
+    private function enableCommentNotification(string $model_context_classname, int $model_context_id) {
+        if (!is_null($model_context_classname) && !is_null($model_context_id)) {
+
+            $model = CommentsUtility::getCommentNotificationUser(
+                $model_context_classname,
+                $model_context_id,
+                Yii::$app->user->id
+            );
+            if (empty($model)) {
+                $model = new \open20\amos\comments\models\base\CommentNotificationUsers();
+                $model->user_id =  Yii::$app->user->id;
+                $model->context_model_class_name = $model_context_classname;
+                $model->context_model_id = $model_context_id;
+                $model->enable = true;
+                $model->save(false);
+            }
+        }
+    }
+
+    /**
+     * @param false $write
+     */
+    public function actionAdjustBells($write = false){
+        CommentsUtility::scannAllModelsForAdjustBells($write);
+    }
+
 }
