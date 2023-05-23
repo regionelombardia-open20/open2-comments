@@ -20,6 +20,7 @@ use open20\amos\core\utilities\ModalUtility;
 use yii\web\View;
 use open20\amos\news\models\News;
 use yii\helpers\Url;
+use open20\amos\admin\AmosAdmin;
 
 CommentsAsset::register($this);
 
@@ -104,7 +105,7 @@ ModalUtility::createAlertModal([
                         'toolbar' => $widget->toolbar,
                         'mobile' => $widget->rteMobile,
                         'mentions' => [
-                            'url' => Url::to(['/admin/user-profile/find-name-user-by-cwh',
+                            'url' => Url::to(['/' . AmosAdmin::getModuleName() . '/user-profile/find-name-user-by-cwh',
                                         'className' => $widget->model::className(),
                                         'model_id' => $widget->model->id,
                                     ])

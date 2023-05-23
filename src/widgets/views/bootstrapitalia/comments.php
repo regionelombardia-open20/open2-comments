@@ -5,6 +5,7 @@ use open20\amos\core\views\AmosLinkPager;
 use open20\amos\comments\AmosComments;
 use open20\amos\attachments\components\AttachmentsTable;
 use open20\amos\attachments\FileModule;
+use open20\amos\admin\AmosAdmin;
 
 $currentAsset = $asset::register($this);
 
@@ -30,7 +31,7 @@ foreach ($comments as $k => $comment) :
         </div>
         <div id="comment_id<?= $comment->id ?>" class="media-body">
             <p class="mt-0 mb-2">
-                <small><a href="/admin/user-profile/view?id=<?= $comment->createdUserProfile->id ?>"><?= $comment->createdUserProfile->nomeCognome ?></a> <span class="text-muted"><?= \Yii::$app->formatter->asDatetime($comment->created_at) ?></span></small>
+                <small><a href="/<?=AmosAdmin::getModuleName()?>/user-profile/view?id=<?= $comment->createdUserProfile->id ?>"><?= $comment->createdUserProfile->nomeCognome ?></a> <span class="text-muted"><?= \Yii::$app->formatter->asDatetime($comment->created_at) ?></span></small>
             </p>
             <?= \Yii::$app->formatter->asHtml($comment->comment_text) ?>
             <?php $commentAttachments = $comment->getCommentAttachmentsForItemView(); ?>

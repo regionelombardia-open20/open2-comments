@@ -80,5 +80,12 @@ return [
     '#disable-notify-link' => 'Disable notify',
     '#disable-notify'=> 'Your comments notifications for this content are deactivated.',
     '#able-notify-link' => 'Enable again!',
-    "#email_subject_tagging_user" => "You have been mentioned in a content about EROI"
+    "#email_subject_tagging_user" => "You have been mentioned in a content about {platformName}",
+    '#beforeActionCtaLoginRegister' => 'enter',
+    '#beforeActionCtaLoginRegisterTitle' => 'Click here to log in or register on the platform {platformName}',
+    '#beforeActionCtaLogin' => 'enter',
+    '#beforeActionCtaLoginTitle' => 'Click here to log in on the platform {platformName}',
+    '#titleBoxPartecipa' => 'Do you want to participate and be updated?',
+    '#subtitleBoxPartecipaLoginRegister' => 'Log in or register to {platformName}',
+    '#subtitleBoxPartecipaLogin' => 'Log in on {platformName}',
 ];

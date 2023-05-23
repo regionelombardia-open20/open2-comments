@@ -1,9 +1,21 @@
+/**
+IMPORT AMOS-LAYOUT VARIABLES
+ */
+@import (optional) "../../vendor/open20/amos-layout/src/assets/resources/base/less/variables.less";
+@import (optional) "../../vendor/open20/amos-layout/src/assets/resources/base/less/utility.less";
+/**
+ IMPORT STYLE-CUSTOM
+  */
+@import (optional) "../../frontend/web/less/style_custom.less";
+
+
 #comments-container {
   margin-top: 20px;
   border-top: none;
+
   .cta-comment {
-    
-    .row.flexbox{
+
+    .row.flexbox {
       align-items: center;
     }
   }
@@ -29,9 +41,11 @@
       margin-top: 20px;
       padding: 0;
       background-color: #f7f9fa;
+
       .comment-content-true {
         padding: 20px;
       }
+
       .subtitle-comments {
         margin-bottom: 30px;
       }
@@ -55,6 +69,7 @@
         .media-left {
           width: 40px;
           height: 40px;
+
           .container-round-img-sm {
             width: 40px;
             height: 40px;
@@ -78,10 +93,11 @@
   position: relative;
   background-color: #ececec;
   padding: 1.5em 0;
+  margin-top: 100px;
 
-
-  .uk-container{
+  .uk-container {
     padding: 1em 2em;
+
     .triangle {
       width: 0;
       height: 0;
@@ -90,15 +106,17 @@
       border-color: #ffffff transparent transparent transparent;
       position: absolute;
       top: 0;
-      left:50%;
+      left: 50%;
       margin-left: -50px;
+
       @media (min-width:992px) {
         left: 50px;
         margin: 0;
       }
-      
+
 
     }
+
     .row {
       div {
         @media(max-width: 991px) {
@@ -106,10 +124,15 @@
         }
       }
 
-      h3{margin-bottom: 0;}
-      p{margin: 0;}
+      h3 {
+        margin-bottom: 0;
+      }
 
-      .btn-default{
+      p {
+        margin: 0;
+      }
+
+      .btn-default {
         font-weight: bold;
         float: right;
         margin-top: 10px;
@@ -122,6 +145,7 @@
     }
   }
 }
-.footer_box.full-width{
+
+.footer_box.full-width {
   margin: 5% 0;
 }

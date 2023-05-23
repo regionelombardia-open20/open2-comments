@@ -3,6 +3,7 @@
 use yii\widgets\Pjax;
 use open20\amos\comments\AmosComments;
 use open20\amos\comments\assets\CommentsDesignAsset;
+use open20\amos\admin\AmosAdmin;
 
 $currentAsset = CommentsDesignAsset::register($this);
 
@@ -29,7 +30,7 @@ foreach ($comments as $k => $comment):
             </div>
             <div id="comment_id<?= $comment->id ?>" class="media-body">
                 <p class="mt-0 mb-2">
-                    <small><a href="/amosadmin/user-profile/view?id=<?= $comment->createdUserProfile->id ?>"><?= $comment->createdUserProfile->nomeCognome ?></a> <span class="text-muted"><?= \Yii::$app->formatter->asDatetime($comment->created_at) ?></span></small>
+                    <small><a href="/<?=AmosAdmin::getModuleName()?>/user-profile/view?id=<?= $comment->createdUserProfile->id ?>"><?= $comment->createdUserProfile->nomeCognome ?></a> <span class="text-muted"><?= \Yii::$app->formatter->asDatetime($comment->created_at) ?></span></small>
                 </p>
                 <?= \Yii::$app->formatter->asHtml($comment->comment_text) ?>
                 <p class="mt-2">

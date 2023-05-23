@@ -384,7 +384,7 @@ $displayNotifyCheckBox = $displayNotifyCheckBox && $commentsModule->modelCanDoIt
                             <div class="col-xs-10 nop">
                                 <div><strong><?=
                                         Html::a($commentReply->createdUserProfile,
-                                            ['/admin/user-profile/view', 'id' => $commentReply->createdUserProfile->id])
+                                            ['/' . AmosAdmin::getModuleName() . '/user-profile/view', 'id' => $commentReply->createdUserProfile->id])
                                         ?></strong></div>
                                 <small> <?= Yii::$app->getFormatter()->asDatetime($commentReply->created_at) ?></small>
                             </div>

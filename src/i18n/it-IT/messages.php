@@ -80,5 +80,12 @@ return [
     '#disable-notify-link' => 'Disattiva notifiche',
     '#disable-notify'=> 'Le tue notifiche ai commenti per questo contenuto sono disattive.',
     '#able-notify-link' => 'Attivale di nuovo!',
-    "#email_subject_tagging_user" => "Sei stato menzionato in un contenuto su EROI"
+    "#email_subject_tagging_user" => "Sei stato menzionato in un contenuto su {platformName}",
+    '#beforeActionCtaLoginRegister' => 'Accedi',
+    '#beforeActionCtaLoginRegisterTitle' => 'Clicca qui per accedere o registrarti alla piattaforma {platformName}',
+    '#beforeActionCtaLogin' => 'Accedi',
+    '#beforeActionCtaLoginTitle' => 'Clicca qui per accedere o registrarti alla piattaforma {platformName}',
+    '#titleBoxPartecipa' => 'Vuoi partecipare ed essere aggiornato?',
+    '#subtitleBoxPartecipaLoginRegister' => 'Accedi o registrati a {platformName}',
+    '#subtitleBoxPartecipaLogin' => 'Accedi a {platformName}',
 ];

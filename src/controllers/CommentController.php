@@ -227,7 +227,7 @@ class CommentController extends CrudController
             $modelContext = $modelContext::find()->andWhere(['id' => $this->model->context_id])->one();
 
             $user_profiles = UserProfile::find()->andWhere(['id' => $user_profile_ids])->all();
-            Record::sendEmailForUserProfiles($user_profiles, $modelContext, $this->model);
+            $this->model->sendEmailForUserProfiles($user_profiles, $modelContext, $this->model);
         }
 
 

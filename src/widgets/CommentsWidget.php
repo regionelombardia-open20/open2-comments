@@ -14,6 +14,7 @@ use open20\amos\comments\models\CommentNotificationUsers;
 use open20\amos\comments\AmosComments;
 use open20\amos\comments\models\Comment;
 use open20\amos\comments\utility\CommentsUtility;
+
 use yii\base\Widget;
 use yii\data\Pagination;
 
@@ -26,22 +27,76 @@ use yii\data\Pagination;
  */
 class CommentsWidget extends Widget
 {
+    /**
+     * 
+     * @var type
+     */
     public $layout = '<div id="comments-container">{commentSection}{commentsSection}</div>';
 
     /**
      * @var \open20\amos\core\record\Record $model
      */
     public $model;
+    
+    /**
+     * 
+     * @var type
+     */
     public $namespaceAssetBootstrapitalia = 'amos\planner\assets\BootstrapItaliaAsset';
-    public $noAttach                      = 0;
-    public $frontend                      = false;
-    public $layoutInverted                = false;
-    public $urlRegistrazione              = null;
-    public $performance                   = false;
-    public $defaultLimit                  = 10;
-    public $pageSize                      = 5;
-    public $useDesign                     = false;
-    public $moderator                     = false;
+    
+    /**
+     * 
+     * @var type
+     */
+    public $noAttach = 0;
+    
+    /**
+     * 
+     * @var type
+     */
+    public $frontend = false;
+    
+    /**
+     * 
+     * @var type
+     */
+    public $layoutInverted = false;
+    
+    /**
+     * 
+     * @var type
+     */
+    public $urlRegistrazione = null;
+    
+    /**
+     * 
+     * @var type
+     */
+    public $performance = false;
+    
+    /**
+     * 
+     * @var type
+     */
+    public $defaultLimit = 10;
+    
+    /**
+     * 
+     * @var type
+     */
+    public $pageSize = 5;
+    
+    /**
+     * 
+     * @var type
+     */
+    public $useDesign = false;
+    
+    /**
+     * 
+     * @var type
+     */
+    public $moderator = false;
 
     /**
      *
@@ -53,15 +108,19 @@ class CommentsWidget extends Widget
           "searchreplace visualblocks code fullscreen code",
           "insertdatetime media table contextmenu paste textcolor image insertdatetime",
           "placeholder", */
-        "contextmenu paste link",
+        'contextmenu paste link',
     ];
 
     /**
      *
      * @var string $toolbar
      */
-    public $toolbar   = "fullscreen | undo redo | bold italic strikethrough | link | removeformat";
+    public $toolbar = 'fullscreen | undo redo | bold italic strikethrough | link | removeformat';
 
+    /**
+     * 
+     * @var type
+     */
     public $rteMobile = [
         'menubar' => true,
         'plugins' => ['autosave', 'autolink'],
@@ -73,7 +132,11 @@ class CommentsWidget extends Widget
         ],
     ];
 
-    public $useRTE    = false;
+    /**
+     * 
+     * @var type
+     */
+    public $useRTE = false;
 
     /**
      * @var array $options Options array for the widget (ie. html options)
@@ -105,10 +168,10 @@ class CommentsWidget extends Widget
      */
     private function initDefaultOptions()
     {
-        $this->options['commentPlaceholder']      = AmosComments::t('amoscomments', 'Write a comment').'...';
+        $this->options['commentPlaceholder'] = AmosComments::t('amoscomments', 'Write a comment').'...';
         $this->options['commentReplyPlaceholder'] = AmosComments::t('amoscomments', 'Write a reply').'...';
-        $this->options['commentTitle']            = AmosComments::t('amoscomments', '#COMMENT_TITLE');
-        $this->options['lastCommentsTitle']       = AmosComments::t('amoscomments', 'Last comments');
+        $this->options['commentTitle'] = AmosComments::t('amoscomments', '#COMMENT_TITLE');
+        $this->options['lastCommentsTitle'] = AmosComments::t('amoscomments', 'Last comments');
     }
 
     /**
@@ -119,11 +182,16 @@ class CommentsWidget extends Widget
         return $this->layout;
     }
 
+    /**
+     * 
+     * @return type
+     */
     public function run()
     {
         if(\Yii::$app->user->isGuest){
             return $this->render('comments-widget/banner-cta');
         }
+
         $content = preg_replace_callback("/{\\w+}/",
             function ($matches) {
             $content = $this->renderSection($matches[0]);
@@ -138,7 +206,8 @@ class CommentsWidget extends Widget
      * Renders a section of the specified name.
      * If the named section is not supported, false will be returned.
      * @param string $name the section name, e.g., `{summary}`, `{items}`.
-     * @return string|boolean the rendering result of the section, or false if the named section is not supported.
+     * @return string|boolean the rendering result of the section, or false
+     * if the named section is not supported.
      */
     public function renderSection($name)
     {
@@ -172,38 +241,41 @@ class CommentsWidget extends Widget
     public function commentSection()
     {
         if ($this->frontend == true) {
-            return $this->render('frontend/comment', [
-                    'widget' => $this
-            ]);
+            return $this->render('frontend/comment', ['widget' => $this]);
         } else if ($this->useDesign === true) {
-            return $this->render('design/comment', [
-                    'widget' => $this
-            ]);
+            return $this->render('design/comment', ['widget' => $this]);
         } else if (property_exists(get_class($this->model), 'bootstrapItalia') && $this->model->bootstrapItalia == true) {
-            return $this->render('bootstrapitalia/comment', [
-                    'widget' => $this
-            ]);
-        } else {
-            return $this->render('comments-widget/comment', [
-                    'widget' => $this
-            ]);
+            return $this->render('bootstrapitalia/comment', ['widget' => $this]);
         }
+
+        return $this->render('comments-widget/comment', ['widget' => $this]);
     }
 
     /**
-     * Method that render the comments section where there are all the comments and comments replies.
+     * Method that render the comments section where there are all the comments
+     * and comments replies.
      * @return string
      */
     public function commentsSection()
     {
         $module = \Yii::$app->getModule('comments');
         /** @var \yii\db\ActiveQuery $query */
-        $query  = Comment::find()->andWhere(['context' => $this->model->className(), 'context_id' => $this->model->id])->orderBy([
-            'created_at' => $module->orderDisplayComments]);
+        $query  = Comment::find()
+            ->andWhere([
+                'context' => $this->model->className(),
+                'context_id' => $this->model->id
+            ])
+            ->orderBy(['created_at' => $module->orderDisplayComments]);
 
         /** @var \open20\amos\comments\models\Comment $lastComment */
-        $lastComment = Comment::find()->andWhere(['context' => $this->model->className(), 'context_id' => $this->model->id])->orderBy([
-                'created_at' => $module->orderDisplayComments])->limit(1)->one();
+        $lastComment = Comment::find()
+            ->andWhere([
+                'context' => $this->model->className(),
+                'context_id' => $this->model->id
+            ])
+            ->orderBy(['created_at' => $module->orderDisplayComments])
+                ->limit(1)
+                ->one();
 
         if ($this->performance == true) {
             $query->limit($this->defaultLimit);
@@ -225,43 +297,39 @@ class CommentsWidget extends Widget
         );
 
         if ($this->frontend == true) {
-            return $this->render('frontend/comments',
-                    [
-                    'widget' => $this,
-                    'pages' => $pages,
-                    'comments' => $comments,
-                    'lastComment' => $lastComment,
-                    'no_attach' => $this->noAttach,
+            return $this->render('frontend/comments', [
+                'widget' => $this,
+                'pages' => $pages,
+                'comments' => $comments,
+                'lastComment' => $lastComment,
+                'no_attach' => $this->noAttach,
             ]);
         } else if ($this->useDesign == true) {
-            return $this->render('design/comments',
-                    [
-                    'widget' => $this,
-                    'pages' => $pages,
-                    'comments' => $comments,
-                    'lastComment' => $lastComment,
-                    'no_attach' => $this->noAttach,
+            return $this->render('design/comments', [
+                'widget' => $this,
+                'pages' => $pages,
+                'comments' => $comments,
+                'lastComment' => $lastComment,
+                'no_attach' => $this->noAttach,
             ]);
         } else if (property_exists(get_class($this->model), 'bootstrapItalia') && $this->model->bootstrapItalia == true) {
-            return $this->render('bootstrapitalia/comments',
-                    [
-                    'widget' => $this,
-                    'pages' => $pages,
-                    'comments' => $comments,
-                    'lastComment' => $lastComment,
-                    'asset' => $this->namespaceAssetBootstrapitalia,
-                    'no_attach' => $this->noAttach,
-            ]);
-        } else {
-            return $this->render('comments-widget/comments',
-                    [
-                    'widget' => $this,
-                    'pages' => $pages,
-                    'comments' => $comments,
-                    'lastComment' => $lastComment,
-                    'notificationUserStatus' => $notificationUserStatus
+            return $this->render('bootstrapitalia/comments', [
+                'widget' => $this,
+                'pages' => $pages,
+                'comments' => $comments,
+                'lastComment' => $lastComment,
+                'asset' => $this->namespaceAssetBootstrapitalia,
+                'no_attach' => $this->noAttach,
             ]);
         }
+        
+        return $this->render('comments-widget/comments', [
+            'widget' => $this,
+            'pages' => $pages,
+            'comments' => $comments,
+            'lastComment' => $lastComment,
+            'notificationUserStatus' => $notificationUserStatus
+        ]);
     }
 
 }
