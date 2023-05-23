@@ -50,7 +50,7 @@ Comments.saveComment = function (context_id, context, csrfKey, csrfValue) {
         // It retrieves the comment attachments.
         var commentAttachments = $('#commentAttachments').prop('files');
         $.each(commentAttachments, function (key, value) {
-            formData.append('commentAttachments[]', value);
+            formData.append('Comment[commentAttachments][]', value);
         });
        
 
