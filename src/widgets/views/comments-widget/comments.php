@@ -333,7 +333,7 @@ $displayNotifyCheckBox = $displayNotifyCheckBox && $commentsModule->modelCanDoIt
                                     'pluginOptions' => [// Plugin options of the Kartik's FileInput widget
                                         'maxFileCount' => $commentsModule->maxCommentAttachments, // Client max files
                                         'showPreview' => true,
-                                        'allowedFileExtensions' => $commentsModule->hasProperty(whiteListFilesExtensions) ? $commentsModule->whiteListFilesExtensions : '',
+                                        'allowedFileExtensions' => $commentsModule->hasProperty('whiteListFilesExtensions') ? $commentsModule->whiteListFilesExtensions : '',
                                     ]
                                 ])
                                 ?>

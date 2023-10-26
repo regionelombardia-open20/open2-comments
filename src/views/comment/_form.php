@@ -79,7 +79,7 @@ $commentsModule = Yii::$app->getModule(AmosComments::getModuleName());
                     'attachInputPluginOptions' => [
                         'maxFileCount' => $commentsModule->maxCommentAttachments,
                         'showPreview' => false,
-                        'allowedFileExtensions' => $commentsModule->hasProperty(whiteListFilesExtensions) ? $commentsModule->whiteListFilesExtensions : '',
+                        'allowedFileExtensions' => $commentsModule->hasProperty('whiteListFilesExtensions') ? $commentsModule->whiteListFilesExtensions : '',
                     ],
                 ])
                 ?>

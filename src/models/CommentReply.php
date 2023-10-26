@@ -68,7 +68,7 @@ class CommentReply extends \open20\amos\comments\models\base\CommentReply
         $commentsModule = \Yii::$app->getModule(AmosComments::getModuleName());
         if(isset($commentsModule)) {
             $maxCommentAttachments = $commentsModule->maxCommentAttachments;
-            if($commentsModule->hasProperty(mimeTypes))
+            if($commentsModule->hasProperty('mimeTypes'))
                 $mimeTypes = $commentsModule->mimeTypes;
         }
         return ArrayHelper::merge(parent::rules(), [
