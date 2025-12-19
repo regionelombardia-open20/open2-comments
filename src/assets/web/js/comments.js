@@ -43,53 +43,79 @@ Comments.saveComment = function (context_id, context, csrfKey, csrfValue) {
         formData.append('Comment[context]', context);
         formData.append('Comment[context_id]', context_id);
         formData.append('Comment[comment_text]', comment_text);
-        if (csrfKey !== null && csrfKey !== 'undefined') {
+        if (csrfKey !== null && csrfKey !== 'undefined' && csrfKey !== undefined) {
             formData.append(csrfKey, csrfValue);
         }
 
-        // It retrieves the comment attachments.
-        var commentAttachments = $('#commentAttachments').prop('files');
-        $.each(commentAttachments, function (key, value) {
-            formData.append('Comment[commentAttachments][]', value);
-        });
-
-        // Find the "send_notify_mail" inputs and add the values to form data.
-        var sendNotifyMailInputs = comment_container.find(":input[name^='send_notify_mail']");
-        sendNotifyMailInputs.each(function (index) {
-            if (($(this).attr('name') === 'send_notify_mail') && ($(this).attr('type') === 'checkbox')) {
-                // It retrieves the checkbox value.
-                var send_notify_mail_val = ($(this).is(":checked") ? 1 : 0);
-                formData.append('send_notify_mail', send_notify_mail_val);
-            } else {
-                formData.append($(this).attr('name'), $(this).val());
-            }
-        });
-
+        // Check if the comment contains words from the blacklist
         $.ajax({
-            url: '/comments/comment/create-ajax',
-            contentType: false,
-            processData: false,
-            data: formData,
+            url: '/comments/comment-blacklist/scan-comment',
+            data: {
+                commentText: comment_text,
+                contextClassname: context,
+                contextId: context_id,
+            },
             type: 'post',
             dataType: 'json',
-            beforeSend: function () {
-                Comments.beforeSendAjax();
-            },
-            complete: function (jjqXHR, textStatus) {
-                Comments.completeAjax();
-            },
             success: function (response) {
-                if (response.error) {
-                    alert(response.error.msg);
-                } else {
-                    var urlRedirect = $('#url-redirect').val();
-                    if(urlRedirect != '' && urlRedirect != undefined){
-                        window.location.href = urlRedirect;
+                if (response.containsBlacklistedWords) {
+                    $('#scan-comment-modal-id').find('.modal-body').html(response.modalBody);
+                    if (!$('#scan-comment-modal-id .modal-footer').length) {
+                        $(response.modalFooter).insertAfter('#scan-comment-modal-id .modal-body');
                     }
-                    Comments.reloadComments();
-                    comment_textarea.val('');
-                    Comments.emptyRedactorEditor(comment_textarea.attr('id'));
-                    //$('#commentAttachments').fileinput('clear');
+                    $('#scan-comment-modal-id').modal('show');
+                } else {
+                    // It retrieves the comment attachments.
+                    var commentAttachments = $('#commentAttachments').prop('files');
+                    $.each(commentAttachments, function (key, value) {
+                        formData.append('Comment[commentAttachments][]', value);
+                    });
+
+                    // Find the "send_notify_mail" inputs and add the values to form data.
+                    var sendNotifyMailInputs = comment_container.find(":input[name^='send_notify_mail']");
+                    sendNotifyMailInputs.each(function (index) {
+                        if (($(this).attr('name') === 'send_notify_mail') && ($(this).attr('type') === 'checkbox')) {
+                            // It retrieves the checkbox value.
+                            var send_notify_mail_val = ($(this).is(":checked") ? 1 : 0);
+                            formData.append('send_notify_mail', send_notify_mail_val);
+                        } else {
+                            formData.append($(this).attr('name'), $(this).val());
+                        }
+                    });
+
+                    $.ajax({
+                        url: '/comments/comment/create-ajax',
+                        contentType: false,
+                        processData: false,
+                        data: formData,
+                        type: 'post',
+                        dataType: 'json',
+                        beforeSend: function () {
+                            Comments.beforeSendAjax();
+                        },
+                        complete: function (jjqXHR, textStatus) {
+                            Comments.completeAjax();
+                        },
+                        success: function (response) {
+                            if (response.error) {
+                                alert(response.error.msg);
+                            } else {
+                                var urlRedirect = $('#url-redirect').val();
+                                if(urlRedirect != '' && urlRedirect != undefined){
+                                    window.location.href = urlRedirect;
+                                }
+                                Comments.notificationOperations(null, context, context_id, false);
+                                Comments.reloadComments();
+                                comment_textarea.val('');
+                                Comments.emptyRedactorEditor(comment_textarea.attr('id'));
+                                //$('#commentAttachments').fileinput('clear');
+                            }
+                        },
+                        error: function (response) {
+                            console.log(response);
+                            $('#ajax-error-comment-modal-id').modal('show');
+                        }
+                    });
                 }
             },
             error: function (response) {
@@ -129,43 +155,69 @@ Comments.saveCommentReply = function (comment_id, csrfKey, csrfValue) {
             formData.append(csrfKey, csrfValue);
         }
 
-        // It retrieves the comment reply attachments.
-        var commentReplyAttachmentsId = '#commentReplyAttachments' + comment_id;
-        var commentReplyAttachments = $(commentReplyAttachmentsId).prop('files');
-        $.each(commentReplyAttachments, function (key, value) {
-            formData.append('commentReplyAttachments[]', value);
-        });
-
-        // Find the "send_reply_notify_mail" inputs and add the values to form data.
-        var sendNotifyMailInputs = comment_reply_container.find(":input[name^='send_reply_notify_mail']");
-        sendNotifyMailInputs.each(function (index) {
-            if ($(this).attr('name') === 'send_reply_notify_mail') {
-                // It retrieves the checkbox value.
-                var send_reply_notify_mail_val = ($(this).is(":checked") ? 1 : 0);
-                formData.append('send_reply_notify_mail', send_reply_notify_mail_val);
-            } else {
-                formData.append($(this).attr('name'), $(this).val());
-            }
-        });
-
+        // Check if the comment reply contains words from the blacklist
         $.ajax({
-            url: '/comments/comment-reply/create-ajax',
-            contentType: false,
-            processData: false,
-            data: formData,
+            url: '/comments/comment-blacklist/scan-comment',
+            data: {
+                commentText: comment_reply_text,
+                isReply: true,
+                commentId: comment_id
+            },
             type: 'post',
             dataType: 'json',
-            beforeSend: function () {
-                Comments.beforeSendAjax();
-            },
-            complete: function (jjqXHR, textStatus) {
-                Comments.completeAjax();
-            },
             success: function (response) {
-                if (response.error) {
-                    alert(response.error.msg);
+                if (response.containsBlacklistedWords) {
+                    $('#scan-comment-modal-id').find('.modal-body').html(response.modalBody);
+                    if (!$('#scan-comment-modal-id .modal-footer').length) {
+                        $(response.modalFooter).insertAfter('#scan-comment-modal-id .modal-body');
+                    }
+                    $('#scan-comment-modal-id').modal('show');
                 } else {
-                    Comments.reloadComments();
+                    // It retrieves the comment reply attachments.
+                    var commentReplyAttachmentsId = '#commentReplyAttachments' + comment_id;
+                    var commentReplyAttachments = $(commentReplyAttachmentsId).prop('files');
+                    $.each(commentReplyAttachments, function (key, value) {
+                        formData.append('commentReplyAttachments[]', value);
+                    });
+
+                    // Find the "send_reply_notify_mail" inputs and add the values to form data.
+                    var sendNotifyMailInputs = comment_reply_container.find(":input[name^='send_reply_notify_mail']");
+                    sendNotifyMailInputs.each(function (index) {
+                        if ($(this).attr('name') === 'send_reply_notify_mail') {
+                            // It retrieves the checkbox value.
+                            var send_reply_notify_mail_val = ($(this).is(":checked") ? 1 : 0);
+                            formData.append('send_reply_notify_mail', send_reply_notify_mail_val);
+                        } else {
+                            formData.append($(this).attr('name'), $(this).val());
+                        }
+                    });
+
+                    $.ajax({
+                        url: '/comments/comment-reply/create-ajax',
+                        contentType: false,
+                        processData: false,
+                        data: formData,
+                        type: 'post',
+                        dataType: 'json',
+                        beforeSend: function () {
+                            Comments.beforeSendAjax();
+                        },
+                        complete: function (jjqXHR, textStatus) {
+                            Comments.completeAjax();
+                        },
+                        success: function (response) {
+                            if (response.error) {
+                                alert(response.error.msg);
+                            } else {
+                                Comments.notificationOperations(comment_id, null, null, true);
+                                Comments.reloadComments();
+                            }
+                        },
+                        error: function (response) {
+                            console.log(response);
+                            $('#ajax-error-comment-reply-modal-id').modal('show');
+                        }
+                    });
                 }
             },
             error: function (response) {
@@ -178,9 +230,38 @@ Comments.saveCommentReply = function (comment_id, csrfKey, csrfValue) {
     }
 };
 
+Comments.notificationOperations = function (commentId, context, contextId, isReply) {
+    $.ajax({
+        url: '/comments/comment-notification-users/get-notification-options',
+        type: 'post',
+        dataType: 'json',
+        data: {
+            commentId: commentId,
+            context: context,
+            contextId: contextId
+        },
+        success: function (response) {
+            if (response.activateViewBellIcon) {
+                const viewBellIcon = $('.bell-notification-container .mdi-bell-outline');
+                if (viewBellIcon.length) {
+                    viewBellIcon.removeClass('mdi-bell-outline').addClass('mdi-bell-ring');
+                    viewBellIcon.parent().attr('data-original-title', response.titleNotificationBellEnabled);
+                }
+            }
+        }
+    })
+}
 Comments.reloadComments = function () {
     $.pjax.defaults.timeout = 15000;
-    $.pjax.reload({container: '#pjax-block-comments', async: false});
+    $.pjax.reload({container: '#pjax-block-comments', async: false}).done(function(){
+        $('.comment-reply-input').each(function (index) {
+            let id = $(this).attr('id');
+            tinymce.remove('#'+id);
+            let configTiny = config_comment_reply;
+            configTiny.selector = '#'+id;
+            tinymce.init(configTiny);
+        });
+    });
 };
 
 Comments.emptyRedactorEditor = function (editorId) {

@@ -11,6 +11,7 @@
 namespace open20\amos\comments\models\base;
 
 use open20\amos\comments\AmosComments;
+use open20\amos\core\validators\StringHtmlValidator;
 use open20\amos\notificationmanager\record\NotifyRecord;
 use yii\helpers\ArrayHelper;
 
@@ -23,6 +24,12 @@ use yii\helpers\ArrayHelper;
  * @property string $context
  * @property integer $context_id
  * @property integer $public
+ * @property string $status
+ * @property integer $in_evidence
+ * @property integer $type
+ * @property integer $msgraph_channel_message_id
+ * @property integer $msgraph_channel_message_weburl
+ * @property integer $from_ms_teams
  * @property string $created_at
  * @property string $updated_at
  * @property string $deleted_at
@@ -31,6 +38,7 @@ use yii\helpers\ArrayHelper;
  * @property integer $deleted_by
  *
  * @property \open20\amos\comments\models\CommentReply[] $commentReplies
+ * @property \open20\amos\comments\models\CommentModeration $commentModeration
  *
  * @package open20\amos\comments\models\base
  */
@@ -65,10 +73,11 @@ class Comment extends NotifyRecord
     {        
         return [
             [['comment_text', 'context', 'context_id'], 'required'],
-            [['comment_text'], 'string'],
+            [['comment_text'], StringHtmlValidator::className()],
+            [['comment_text', 'status'], 'string'],
             [['context'], 'string', 'max' => 255],
-            [['created_at', 'updated_at', 'deleted_at'], 'safe'],
-            [['context_id', 'created_by', 'updated_by', 'deleted_by', 'public'], 'integer'],
+            [['created_at', 'updated_at', 'deleted_at','msgraph_channel_message_id','msgraph_channel_message_weburl'], 'safe'],
+            [['from_ms_teams','in_evidence','context_id', 'created_by', 'updated_by', 'deleted_by', 'public', 'type'], 'integer'],
             ['public', 'default', 'value' => ($this->getEnableModerator() ? ($this->getModerator() == true ? 1 : 0) : 1)],
         ];
     }
@@ -126,6 +135,32 @@ class Comment extends NotifyRecord
     }
 
     /**
+     * @return string
+     */
+    public function getToValidateStatus(): string
+    {
+        return \open20\amos\comments\models\Comment::STATUS_TOVALIDATE;
+    }
+
+    /**
+     * @param $status
+     * @return int
+     */
+    public function getStatusLastUpdateUser($status): int
+    {
+        return $this->updated_by;
+    }
+
+    /**
+     * @param $status
+     * @return string
+     */
+    public function getStatusLastUpdateTime($status): string
+    {
+        return $this->updated_at;
+    }
+
+    /**
      * @return \yii\db\ActiveQuery
      */
     public function getCommentReplies()
@@ -136,6 +171,25 @@ class Comment extends NotifyRecord
     public function getUserProfile()
     {
         return $this->hasOne(\open20\amos\admin\models\UserProfile::className(), ['id' => 'created_by']);
+    }
+
+    /**
+     * @return \yii\db\ActiveQuery
+     */
+    public function getCommentModeration()
+    {
+        return $this->hasOne(\open20\amos\comments\models\CommentModeration::className(), [
+            'content_id' => 'context_id',
+            'classname' => 'context'
+        ]);
+    }
+
+    /**
+     * @return \yii\db\ActiveQuery
+     */
+    public function getContextModel(): \yii\db\ActiveQuery
+    {
+        return $this->hasOne($this->context::className(), ['id' => 'context_id']);
     }
 
     public function setModerator($moderator)
@@ -156,5 +210,13 @@ class Comment extends NotifyRecord
     public function getEnableModerator()
     {
         return $this->moderator;
+    }
+
+    /**
+     * @return string
+     */
+    public function getTitle(): string
+    {
+        return $this->comment_text;
     }
 }

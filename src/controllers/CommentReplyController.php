@@ -14,13 +14,17 @@ namespace open20\amos\comments\controllers;
 use open20\amos\comments\AmosComments;
 use open20\amos\comments\base\PartecipantsNotification;
 use open20\amos\comments\exceptions\CommentsException;
+use open20\amos\comments\models\Comment;
+use open20\amos\comments\models\CommentDashboard;
 use open20\amos\comments\models\CommentReply;
 use open20\amos\comments\models\search\CommentReplySearch;
 use open20\amos\comments\utility\CommentsUtility;
+use open20\amos\community\models\CommunityUserMm;
 use open20\amos\core\controllers\CrudController;
 use open20\amos\core\helpers\Html;
 use open20\amos\core\icons\AmosIcons;
 use Yii;
+use yii\base\InvalidConfigException;
 use yii\filters\AccessControl;
 use yii\filters\VerbFilter;
 use yii\helpers\ArrayHelper;
@@ -154,6 +158,7 @@ class CommentReplyController extends CrudController
     /**
      * @return array|CommentReply|\open20\amos\core\record\Record
      * @throws CommentsException
+     * @throws InvalidConfigException
      */
     public function actionCreateAjax()
     {
@@ -166,6 +171,8 @@ class CommentReplyController extends CrudController
 
         Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
         $post = Yii::$app->request->post();
+        // Set initial status
+        $this->model->status = Comment::STATUS_PUBLISHED;
 
         if (!$this->model->load($post)) {
             return [
@@ -186,9 +193,28 @@ class CommentReplyController extends CrudController
         if ($this->model->save()) {
             /** @var AmosComments $commentsModule */
             $commentsModule = Yii::$app->getModule(AmosComments::getModuleName());
+            if ($commentsModule->enableModeration) {
+                $commentDashboard =  CommentDashboard::find()->one();
+                $contextModel = $this->model->comment->contextModel;
+                $isCommunityContent = false;
+                if (method_exists($contextModel, 'isNetworkContent')) {
+                    $isCommunityContent = $contextModel->isNetworkContent('community');
+                }
+                if ((!$isCommunityContent && $commentDashboard->moderation_platform) || ($isCommunityContent && $commentDashboard->moderation_communities)) {
+                    if ($this->model->comment->commentModeration->moderation) {
+                        $this->model->status = Comment::STATUS_TOVALIDATE;
+                        if ($this->model->save(false)) {
+                            CommentsUtility::notifyMyActivities($isCommunityContent, $contextModel);
+                        }
+                    }
+                }
+            }
+
             if (!$commentsModule->enableUserSendMailCheckbox || ($commentsModule->enableUserSendMailCheckbox && isset($post['send_reply_notify_mail']) && $post['send_reply_notify_mail'])) {
-                $partecipantsnotify = $this->getParticipantsNotificationInstance();
-                $partecipantsnotify->partecipantAlert($this->model);
+                if ($this->model->status == Comment::STATUS_PUBLISHED) {
+                    $partecipantsnotify = $this->getParticipantsNotificationInstance();
+                    $partecipantsnotify->partecipantAlert($this->model);
+                }
             }
 
             $this->enableCommentNotification($this->model->comment->context, $this->model->comment->context_id);
@@ -206,6 +232,7 @@ class CommentReplyController extends CrudController
     /**
      * @param int $id
      * @return string|\yii\web\Response
+     * @throws InvalidConfigException
      */
     public function actionUpdate($id)
     {
@@ -215,6 +242,25 @@ class CommentReplyController extends CrudController
 
         if ($this->model->load(Yii::$app->request->post()) && $this->model->validate()) {
             if ($this->model->save()) {
+                /** @var AmosComments $moduleComments */
+                $moduleComments = Yii::$app->getModule(AmosComments::getModuleName());
+                // If moderation is active put the comment in "to validate" status
+                if ($moduleComments->enableModeration) {
+                    $contextModel = $this->model->comment->contextModel;
+                    $isCommunityContent = false;
+                    if (method_exists($contextModel, 'isNetworkContent')) {
+                        $isCommunityContent = $contextModel->isNetworkContent('community');
+                    }
+                    $commentDashboard = CommentDashboard::find()->one();
+                    if ((!$isCommunityContent && $commentDashboard->moderation_platform) || ($isCommunityContent && $commentDashboard->moderation_communities)) {
+                        if ($this->model->comment->commentModeration->moderation && $this->model->status == Comment::STATUS_PUBLISHED) {
+                            $this->model->status = Comment::STATUS_TOVALIDATE;
+                            if ($this->model->save(false)) {
+                                CommentsUtility::notifyMyActivities($isCommunityContent, $contextModel);
+                            }
+                        }
+                    }
+                }
                 Yii::$app->getSession()->addFlash('success', AmosComments::t('amoscomments', 'Comment reply successfully updated.'));
                 return $this->redirect(Url::previous());
             } else {
@@ -264,22 +310,8 @@ class CommentReplyController extends CrudController
      * @param int|null $model_context_id
      * @return void
      */
-    private function enableCommentNotification(string $model_context_classname, int $model_context_id) {
-        if (!is_null($model_context_classname) && !is_null($model_context_id)) {
-
-            $model = CommentsUtility::getCommentNotificationUser(
-                $model_context_classname,
-                $model_context_id,
-                Yii::$app->user->id
-            );
-            if (empty($model)) {
-                $model = new \open20\amos\comments\models\base\CommentNotificationUsers();
-                $model->user_id =  Yii::$app->user->id;
-                $model->context_model_class_name = $model_context_classname;
-                $model->context_model_id = $model_context_id;
-                $model->enable = true;
-                $model->save(false);
-            }
-        }
+    private function enableCommentNotification(string $model_context_classname, int $model_context_id)
+    {
+        CommentsUtility::saveCommentNotificationUser($model_context_classname, $model_context_id);
     }
 }

@@ -82,7 +82,7 @@ class CommunityUpdateContentRule extends DefaultOwnContentRule
     private function validatorContentUpdatePermission($model, $contextModel)
     {
         $cwhModule  = \Yii::$app->getModule('cwh');
-        $cwhEnabled = (isset($cwhModule) && in_array(get_class($contextModel), $cwhModule->modelsEnabled) && $cwhModule->behaviors);
+        $cwhEnabled = (isset($cwhModule) && !empty($contextModel) && is_object($contextModel) && in_array(get_class($contextModel), $cwhModule->modelsEnabled) && $cwhModule->behaviors);
         if (empty($contextModel)) {
             return false;
         } else {

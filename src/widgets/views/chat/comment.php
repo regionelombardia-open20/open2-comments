@@ -24,43 +24,67 @@ use yii\helpers\Url;
 use open20\amos\admin\AmosAdmin;
 
 CommentsChatAsset::register($this);
+/**
+ * @var \open20\amos\comments\widgets\CommentsWidget $widget
+ */
+
+$moduleCommunity = \Yii::$app->getModule('community');
+$isEnabledTeams = false;
+if ($moduleCommunity && property_exists($moduleCommunity, 'enableMicrosoftTeams') && $moduleCommunity->enableMicrosoftTeams) {
+    if (get_class($widget->model) == 'open20\amos\community\models\Community') {
+        $community = \open20\amos\community\models\Community::findOne($widget->model->id);
+        if ($community) {
+            if (empty($community->parent_id)) {
+                $isEnabledTeams = $community->enable_msgraph_teams;
+            } else {
+                $parent = \open20\amos\community\models\Community::getCommunityRoot($community);
+                if ($parent) {
+                    $isEnabledTeams = $parent->enable_msgraph_teams;
+                }
+            }
+        }
+    }
+}
+
 $template = '<div class="content-message-chat" id="" tabindex="0">' .
-    '<div class="row">' .
-    '<div class="col-md-3">' .
+    '<div class="media">' .
     '<div class="media-left">' .
     '<div class="container-round-img-xs">' .
     '<img class="square-img" src="" alt="" style="margin-left: 0%; margin-top: 0%;">' .
     '</div>' .
-    '<strong class="name-author">' .
+    '</div>' .
+    '<div class="media-body">' .
+    '<div class="header-message-chat">' .
+    '<div class="name-author">' .
     '<small>' .
     '<a href=""></a>' .
     '</small>' .
-    '</strong>' .
     '</div>' .
+    '<div class="date-message-chat">' .
+    '<small class="date-message"></small>' .
+    '<span style="display:none" class="mdi mdi-microsoft-teams icon-ms-teams color-ms-teams mdi-18px"></span>'.
     '</div>' .
-    '<div class="col-md-7">' .
-    '<div class="media-body">' .
+    '<div class="content-action-date">' .
+    '<div class="action-message-chat">';
+
+if (!$isEnabledTeams) {
+    $template .=
+        '<button id="" class="btn btn-xs btn-danger deleteComment bi bi-bucket" style="margin-right:3px">' .
+        '<span class="am am-delete"></span>' .
+        '</button>' .
+        '<button id="" class="btn btn-xs btn-secondary updateComment bi bi-gea">' .
+        '<span class="am am-edit"></span>' .
+        '</button>';
+}
+
+$template .= '</div>' .
+    '</div>' .
     '</div>' .
     '<p class="answer_text"></p>' .
     '</div>' .
-    '<div class="col-md-2">' .
-    '<div class="content-action-date">' .
-    '<div class="action-message-chat">' .
-    '<button id="" class="btn btn-xs btn-danger deleteComment bi bi-bucket" style="margin-right:3px">' .
-    '<span class="am am-delete"></span>' .
-    '</button>' .
-    '<button id="" class="btn btn-xs btn-secondary updateComment bi bi-gea">' .
-    '<span class="am am-edit"></span>' .
-    '</button>' .
-    '</div>' .
-    '<small class="date-message"></small>' .
-    '</div>' .
-    '</div>' .
     '</div>' .
     '</div>';
-/**
- * @var \open20\amos\comments\widgets\CommentsWidget $widget
- */
+
 
 $js = "
     // Premuto pulsante per salvare il messaggio
@@ -125,10 +149,16 @@ $commentsModule = Yii::$app->getModule(AmosComments::getModuleName());
 
 ModalUtility::createAlertModal([
     'id' => 'ajax-error-comment-modal-id',
+    'modalHeader' => AmosComments::t('amoscomments', 'Attenzione'),
+    'headerText' => AmosComments::t('amoscomments', 'Attenzione'),
+
     'modalDescriptionText' => AmosComments::t('amoscomments', '#AJAX_ERROR_COMMENT')
 ]);
 ModalUtility::createAlertModal([
     'id' => 'empty-comment-modal-id',
+    'modalHeader' => AmosComments::t('amoscomments', 'Attenzione'),
+    'headerText' => AmosComments::t('amoscomments', 'Attenzione'),
+
     'modalDescriptionText' => AmosComments::t('amoscomments', '#EMPTY_COMMENT')
 ]);
 ?>
@@ -144,9 +174,9 @@ ModalUtility::createAlertModal([
     }
 
     $displayNotifyCheckBox = $displayNotifyCheckBox && $commentsModule->modelCanDoIt(
-        $class,
-        'enableUserSendMailCheckbox'
-    );
+            $class,
+            'enableUserSendMailCheckbox'
+        );
 
     $openAccordion = false;
 
@@ -169,6 +199,23 @@ ModalUtility::createAlertModal([
     );
 
     $scope = \open20\amos\cwh\AmosCwh::getInstance()->getCwhScope();
+
+    $canComment = true;
+    if (isset($scope['community'])) {
+        $communityModule = \Yii::$app->getModule('community');
+        $CommunityId = $scope['community'];
+        $community = \open20\amos\community\models\Community::findOne($CommunityId);
+        if (!\Yii::$app->user->isGuest && $community) {
+            $count = \open20\amos\community\models\CommunityUserMm::find()
+                ->andWhere(['community_id' => $community->id, 'user_id' => \Yii::$app->user->id])
+                ->andWhere(['status' => \open20\amos\community\models\CommunityUserMm::STATUS_ACTIVE])
+                ->count();
+            if ($count == 0) {
+                $canComment = false;
+            }
+        }
+
+    }
     $tags = [];
     ?>
     <div id='bk-contribute'>
@@ -176,12 +223,18 @@ ModalUtility::createAlertModal([
 
             <div>
                 <div>
-                    <?php $redactorComment = Html::textArea(
+                    <?php 
+                    $labelRedactorComment = Html::label(
+                        AmosComments::t('amoscomments', 'Scrivi messaggio'),
+                        'contribute-area',
+                        ['class' => 'hidden']
+                    );
+                    $redactorComment = Html::textArea(
                         'contribute-area',
                         '',
                         [
                             'id' => 'contribute-area',
-                            'placeholder' => AmosComments::t('amoscomments', 'Digita qui il messaggio (max 220 caratteri)'),
+                            'placeholder' => AmosComments::t('amoscomments', 'Scrivi messaggio (max 220 caratteri)'),
                             'rows' => '1'
                         ]
                     );
@@ -192,7 +245,8 @@ ModalUtility::createAlertModal([
                             [
                                 'id' => 'contribute-btn',
                                 'class' => 'btn btn-primary sendSaveComment',
-                                'title' => AmosComments::t('amoscomments', 'Comment content')
+                                'title' => AmosComments::t('amoscomments', 'Invia chat'),
+                                'aria-label' => AmosComments::t('amoscomments', 'Invia chat')
                             ]
                         );
 
@@ -223,20 +277,22 @@ ModalUtility::createAlertModal([
 
                     <div class="redactor">
                         <div class="text-area">
-                            <?= $redactorComment ?>
+                            <?= $canComment ? $labelRedactorComment . $redactorComment : '' ?>
                         </div>
-                        <div class="button-send-comment">
-                            <?= $btnComment ?>
-                            <?= $btnCancelUpdateComment ?>
-                            <?= $btnUpdateComment ?>
-                        </div>
-
                     </div>
-                    <div class="row">
-                        <div class="col-sm-12 notify">
+                    <div class="action-chat-footer">
+
+                        <div class="notify">
                             <?= $notifyCheckbox ?>
+
                         </div>
-                       
+                        <div class="actions-buttons-chat">
+                            <div class="button-send-comment">
+                                <?= $canComment ? $btnComment : '' ?>
+                                <?= $btnCancelUpdateComment ?>
+                                <?= $btnUpdateComment ?>
+                            </div>
+                        </div>
                     </div>
 
 
@@ -247,12 +303,12 @@ ModalUtility::createAlertModal([
     </div>
     <?php
     if (\Yii::$app->request->get('urlRedirect') && (strpos(
-        \Yii::$app->request->get('urlRedirect'),
-        \Yii::$app->params['platform']['frontendUrl']
-    ) !== false || strpos(
-        \Yii::$app->request->get('urlRedirect'),
-        \Yii::$app->params['platform']['backendUrl']
-    ) !== false)) {
+                \Yii::$app->request->get('urlRedirect'),
+                \Yii::$app->params['platform']['frontendUrl']
+            ) !== false || strpos(
+                \Yii::$app->request->get('urlRedirect'),
+                \Yii::$app->params['platform']['backendUrl']
+            ) !== false)) {
         echo Html::hiddenInput('urlRedirect', \Yii::$app->request->get('urlRedirect'), ['id' => 'url-redirect']);
     }
     ?>

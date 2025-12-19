@@ -51,11 +51,24 @@ $commentsModule = Yii::$app->getModule(AmosComments::getModuleName());
 
 ModalUtility::createAlertModal([
     'id' => 'ajax-error-comment-modal-id',
+    'modalHeader' => AmosComments::t('amoscomments', 'Attenzione'),
+    'headerText' => AmosComments::t('amoscomments', 'Attenzione'),
+
     'modalDescriptionText' => AmosComments::t('amoscomments', '#AJAX_ERROR_COMMENT')
 ]);
 ModalUtility::createAlertModal([
     'id' => 'empty-comment-modal-id',
+    'modalHeader' => AmosComments::t('amoscomments', 'Attenzione'),
+    'headerText' => AmosComments::t('amoscomments', 'Attenzione'),
+
     'modalDescriptionText' => AmosComments::t('amoscomments', '#EMPTY_COMMENT')
+]);
+ModalUtility::createAlertModal([
+    'id' => 'scan-comment-modal-id',
+    'modalHeader' => AmosComments::t('amoscomments', 'Attenzione'),
+    'headerText' => AmosComments::t('amoscomments', 'Attenzione'),
+
+    'modalDescriptionText' => AmosComments::t('amoscomments', 'Il commento contiene termini non consentiti')
 ]);
 ?>
 
@@ -93,6 +106,23 @@ ModalUtility::createAlertModal([
     ] );
 
     $scope = \open20\amos\cwh\AmosCwh::getInstance()->getCwhScope();
+
+    $canComment = true;
+    if (isset($scope['community'])) {
+            $communityModule = \Yii::$app->getModule('community');
+            $CommunityId = $scope['community'];
+            $community = \open20\amos\community\models\Community::findOne($CommunityId);
+            if (!\Yii::$app->user->isGuest && $community) {
+                $count = \open20\amos\community\models\CommunityUserMm::find()
+                    ->andWhere(['community_id' => $community->id, 'user_id' => \Yii::$app->user->id])
+                    ->andWhere(['status' => \open20\amos\community\models\CommunityUserMm::STATUS_ACTIVE])
+                    ->count();
+                if ($count == 0) {
+                    $canComment = false;
+                }
+        }
+
+    }
     $tags = [];
     ?>
     <div id='bk-contribute'>
@@ -174,7 +204,7 @@ ModalUtility::createAlertModal([
             ['class' => 'text-right']
         );
         ?>
-
+        <?php if($canComment) { ?>
         <div id="comments_contribute" class="contribute m-t-35">
             <div class="row">
                 <div class="col-xs-12">
@@ -190,14 +220,15 @@ ModalUtility::createAlertModal([
                 </div>
                 <div class="col-xs-12 cta-comment">
                     <div class="row flexbox">
-                        <div class="col-xs-8"><?= $notifyCheckbox ?></div>
-                        <div class="col-xs-4">
+                        <div class="col-sm-8 col-xs-6"><?= $notifyCheckbox ?></div>
+                        <div class="col-sm-4 col-xs-6">
                             <?= $btnComment ?>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
+        <?php } ?>
 
     </div>
 

@@ -19,10 +19,15 @@ use open20\amos\core\interfaces\ModelLabelsInterface;
 
 $title = $contextModel->__toString();
 if (($contextModel instanceof BaseContentModelInterface) || $contextModel->hasMethod('getTitle')) {
-    $title = $contextModel->getTitle();
+    $prefix = '';
+    if ($contextModel->hasMethod('getSiglaPiattaforma')) {
+        $prefix = $contextModel->getSiglaPiattaforma()." | ";
+    }
+    $title = $prefix . $contextModel->getTitle();
 }
 
 $label = '-';
+
 if (($contextModel instanceof ModelLabelsInterface) || $contextModel->hasMethod('getGrammar')) {
     $label = $contextModel->getGrammar()->getModelSingularLabel();
 }

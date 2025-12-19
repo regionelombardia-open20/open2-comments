@@ -11,7 +11,10 @@
 
 namespace open20\amos\comments\models\search;
 
+use open20\amos\comments\models\Comment;
 use open20\amos\comments\models\CommentReply;
+use open20\amos\comments\utility\CommentsUtility;
+use yii\base\InvalidConfigException;
 use yii\base\Model;
 use yii\data\ActiveDataProvider;
 
@@ -28,7 +31,7 @@ class CommentReplySearch extends CommentReply
     {
         return [
             [['id', 'comment_id', 'created_by', 'updated_by', 'deleted_by'], 'integer'],
-            [['comment_reply_text', 'context', 'created_at', 'updated_at', 'deleted_at'], 'safe'],
+            [['comment_reply_text', 'context', 'created_at', 'updated_at', 'deleted_at', 'status'], 'safe'],
         ];
     }
 
@@ -65,6 +68,38 @@ class CommentReplySearch extends CommentReply
         ]);
 
         $query->andFilterWhere(['like', 'comment_reply_text', $this->comment_reply_text]);
+
+        return $dataProvider;
+    }
+
+    /**
+     * Search comment replies to validate
+     * @param $params
+     * @return ActiveDataProvider
+     * @throws InvalidConfigException
+     */
+    public function searchToValidate($params): ActiveDataProvider
+    {
+        // Checks if the user is a validator of the context model
+        $commentRepliesToValidate = CommentReply::find()->andWhere(['status' => Comment::STATUS_TOVALIDATE])->all();
+        $commentReplyIdsToShow = [];
+        /** @var CommentReply $commentReplyToValidate */
+        foreach ($commentRepliesToValidate as $commentReplyToValidate) {
+            $contextModel = $commentReplyToValidate->comment->contextModel;
+            if (CommentsUtility::userIsCommentsValidator($contextModel)) {
+                $commentReplyIdsToShow[] = $commentReplyToValidate->id;
+            }
+        }
+        if (!empty($commentReplyIdsToShow)) {
+            $dataProvider = $this->search($params);
+            $dataProvider->query->andWhere(['status' => Comment::STATUS_TOVALIDATE]);
+            $dataProvider->query->andWhere(['in', 'id', $commentReplyIdsToShow]);
+        } else {
+            // If the user is not a validator, the dataProvider is empty
+            $dataProvider = new ActiveDataProvider([
+                'query' => Comment::find()->andWhere(['id' => 0]),
+            ]);
+        }
 
         return $dataProvider;
     }

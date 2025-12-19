@@ -20,6 +20,7 @@ use open20\amos\core\interfaces\ModelLabelsInterface;
 use open20\amos\core\record\Record;
 use open20\amos\core\user\User;
 use open20\amos\core\utilities\Email;
+use open20\amos\notificationmanager\utility\NotifyUtility;
 use Yii;
 use yii\base\BaseObject;
 use yii\helpers\ArrayHelper;
@@ -86,10 +87,10 @@ class PartecipantsNotification extends BaseObject
 
     /**
      * This method sends the mail notifications of the chat
-     * @param $userIds
      * @param Comment $comment
+     * @param null|int $userIdToExclude
      */
-    public function partecipantChatAlert($userIds, Comment $comment)
+    public function partecipantChatAlert(Comment $comment, $userIdToExclude = null)
     {
 //        /** @var \open20\amos\core\record\Record $contextModelClassName */
 //        $contextModelClassName = $comment->context;
@@ -97,16 +98,18 @@ class PartecipantsNotification extends BaseObject
 //        $contextModel          = $contextModelClassName::findOne($comment->context_id);
 //        $this->sendEmail($userIds, $contextModel, $comment);
 
+        $userIds = self::getChatUsersToNotify($comment, $userIdToExclude);
+
         if (!empty($userIds)) {
             foreach ($userIds as $userId) {
                 /** @var User $user */
                 $user = User::findOne($userId);
-                if ($user->userProfile->isActive()) {
+                if ($user && $user->userProfile->isActive()) {
                     /** @var Community $communityModel */
                     $communityModel = $comment->context;
                     $communityId = $comment->context_id;
                     $community = $communityModel::findOne($communityId);
-                    $from = \Yii::$app->params['email-assistenza'] ?? 'assistenza@open20.it';
+                    $from = \Yii::$app->params['email-assistenza'] ? 'assistenza@open20.it' : '';
                     $subject = \Yii::t('amoscomments', '#chat_message_subject', [
                         'communityName' => $community->name,
                     ]);
@@ -121,6 +124,25 @@ class PartecipantsNotification extends BaseObject
                 }
             }
         }
+    }
+
+    /**
+     * @param $comment Comment
+     * @param null|int $userIdToExclude
+     * @return array
+     */
+    protected static function getChatUsersToNotify($comment, $userIdToExclude = null)
+    {
+        $toNotifyList = CommentsUtility::getAllCommentNotificationUserEnabled($comment->context, $comment->context_id);
+        if (empty($userIdToExclude)) {
+            $userIdToExclude = \Yii::$app->user->id;
+        }
+        // Exclude user from notifications
+        if (($key = array_search($userIdToExclude, $toNotifyList)) !== false) {
+            unset($toNotifyList[$key]);
+        }
+
+        return $toNotifyList;
     }
 
     /**
@@ -175,11 +197,12 @@ class PartecipantsNotification extends BaseObject
             $users = $this->getDiscussionsRecipients($contextModel);
         }
 
-        if (empty($users) && $contextModel->hasMethod('getRecipients')) {
-            $users = $contextModel->getRecipients();
-        }
         if (empty($users)) {
-            $users = $this->getDefaultRecipients($contextModel, $contextModelClassName);
+            if ($contextModel->hasMethod('getRecipients')) {
+                $users = $contextModel->getRecipients();
+            } else {
+                $users = $this->getDefaultRecipients($contextModel, $contextModelClassName);
+            }
         }
 
         return $users;
@@ -279,6 +302,11 @@ class PartecipantsNotification extends BaseObject
             $moduleNotify = \Yii::$app->getModule('notify');
 
             foreach ($userIds as $id) {
+                // Skip the notification to the user who has created the comment
+                if ($id == Yii::$app->user->id) {
+                    continue;
+                }
+
                 $notifyComment = true;
                 $user          = User::findOne($id);
 
@@ -292,7 +320,20 @@ class PartecipantsNotification extends BaseObject
                         $notifyComment = false;
                     }
                 }
+
+                // If the user has disabled the notification for this content, the email is not sent.
+                $commentNotificationUsers = CommentNotificationUsers::findOne([
+                    'user_id' => $id,
+                    'context_model_class_name' => $contextModel->className(),
+                    'context_model_id' => $contextModel->id
+                ]);
+                if (!empty($commentNotificationUsers)) {
+                    if (!$commentNotificationUsers->enable) {
+                        $notifyComment = false;
+                    }
+                }
                 if ($notifyComment) {
+
                     $subject = $this->getSubject($contextModel);
                     $message = $this->renderEmail($contextModel, $model, $model_reply, $user);
                     if (!is_null($user)) {
@@ -302,6 +343,22 @@ class PartecipantsNotification extends BaseObject
                             if (isset(Yii::$app->params['email-assistenza'])) {
                                 //use default platform email assistance
                                 $from = Yii::$app->params['email-assistenza'];
+								if(AmosComments::instance()->modelsCustomMail[$contextModel->className()]){
+									$from = AmosComments::instance()->modelsCustomMail[$contextModel->className()];
+								}
+                                if (method_exists($contextModel, 'isNetworkContent')) {
+                                    if ($contextModel->isNetworkContent('community')) {
+                                        /** @var \open20\amos\notificationmanager\AmosNotify $notifyModule */
+                                        $notifyModule = \Yii::$app->getModule('notify');
+                                        if ($notifyModule && isset($notifyModule->enableCommunityNameInSenderEmail) && $notifyModule->enableCommunityNameInSenderEmail) {
+                                            $communityId = CommentsUtility::getCommunityIdFromContextModel($contextModel);
+                                            if ($communityId) {
+                                                $communityName = Community::findOne($communityId)->name;
+                                                $from = NotifyUtility::getFromEmailWithCommunityName($from, $communityName);
+                                            }
+                                        }
+                                    }
+                                }
                             }
                             $email->sendMail($from, [$user->email], $subject, $message);
                         }

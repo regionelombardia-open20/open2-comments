@@ -7,12 +7,14 @@ IMPORT AMOS-LAYOUT VARIABLES
  IMPORT STYLE-CUSTOM
   */
 @import (optional) "../../frontend/web/less/style_custom.less";
-
+@color-ms-teams: #484FB8;
 
 #comments-container {
   margin-top: 20px;
   border-top: none;
-
+  .media, .media-body {
+    overflow: inherit !important;
+  }
   .cta-comment {
 
     .row.flexbox {
@@ -46,10 +48,6 @@ IMPORT AMOS-LAYOUT VARIABLES
         padding: 20px;
       }
 
-      .subtitle-comments {
-        margin-bottom: 30px;
-      }
-
       .answer-action {
         float: right;
         margin-top: 20px;
@@ -57,14 +55,14 @@ IMPORT AMOS-LAYOUT VARIABLES
 
       .container-social-share {
         margin-top: 30px;
-        float: right;
+        // float: right;
         width: auto;
       }
 
       .answer {
         margin-bottom: 30px;
         border-bottom: 1px dotted #ccc;
-        padding-bottom: 20px;
+        padding: 0 15px 15px 20px;
 
         .media-left {
           width: 40px;
@@ -83,8 +81,73 @@ IMPORT AMOS-LAYOUT VARIABLES
       }
 
     }
+
   }
 
+  .comment-waiting {
+    padding: 12px;
+    border-radius: 6px;
+    border: dashed 1px #999;
+    margin-bottom: 12px;
+    > .answer {
+      border-bottom: none !important;
+      padding-bottom: 0 !important;
+      margin-bottom: 0 !important;
+    }
+    .header-comment-waiting {
+      font-size: 14px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      
+      color: #43596;
+      .label-comment-waiting {
+        display: flex;
+        align-items: center;
+      }
+
+      .actions-comment-waiting {
+        margin-left: auto;
+      }
+    }
+
+  }
+  .header-comment-waiting + .row {
+    margin-top: 12px;
+  }
+  .no-comment-waiting {
+
+    .header-comment-waiting {
+      font-size: 14px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+
+      .label-comment-waiting {
+        display: flex;
+        align-items: center;
+      }
+
+      .actions-comment-waiting {
+        margin-left: auto;
+      }
+    }
+
+  }
+
+}
+
+.comment-deleted {
+  font-size: 14px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  .label-comment-deleted {
+    display: flex;
+    align-items: center;
+    margin-right: 5px;
+    color: #435960;
+  }
 }
 
 // FOOTER CALL TO ACTION BOX
@@ -159,6 +222,7 @@ IMPORT AMOS-LAYOUT VARIABLES
     overflow: hidden;
     position: relative;
     width: 100%;
+
     #comments_anchor {
       margin: 0 !important;
       background-color: #EFF2F3;
@@ -169,7 +233,7 @@ IMPORT AMOS-LAYOUT VARIABLES
       justify-content: space-between;
       position: sticky;
       background-color: #EFF2F3;
-      
+
       width: 100%;
       top: 0;
       left: 0;
@@ -209,6 +273,7 @@ IMPORT AMOS-LAYOUT VARIABLES
     .content-message-chat {
       padding: 6px 15px;
       position: relative;
+
       &:hover {
         background-color: rgb(241, 241, 241);
       }
@@ -219,57 +284,86 @@ IMPORT AMOS-LAYOUT VARIABLES
 
         }
       }
+
       .media-left {
-        display: flex;
-        align-items: center;
-        div[class*="container-round-img"]{
+        // display: flex;
+        // align-items: center;
+        padding-right: 0;
+        div[class*="container-round-img"] {
           margin: 0 10px 0 0;
           box-shadow: 0px 0px 2px #ccc;
+          display: flex;
+          align-items: center;
+          justify-content: center;
         }
       }
-      .answer_text {
+
+      .answer_text,.answer_teams {
         font-size: 16px;
-        // margin-top: 0;
+        margin-top: 0;
       }
+
       .media-body {
         position: relative;
+        .header-message-chat {
+          display: flex;
+          flex-wrap: wrap;
+          align-items: baseline;
+          .name-author {
+            font-weight: 600;
+            margin-right: 8px;
+          }
+          .date-message-chat {
+            margin-right: auto;
+          }
+        }
+        
       }
+
       .content-action-date {
         display: flex;
         justify-content: space-between;
-        margin-top: 5px;
+        // margin-top: 5px;
       }
+
       .action-message-chat {
         // position: absolute;
         // top: 0;
         // right: 0;
         // display: none;
         margin-right: 6px;
+
         .btn {
           margin: 0px;
           padding: 6px;
         }
+
         .btn span.am {
           font-size: 12px !important;
         }
       }
+
       .author-chat-comment {
         display: flex;
         align-items: baseline;
 
       }
+
       .name-author {
         // margin-right: 8px;
         line-height: 1.2;
+
         a {
           color: #000;
           text-decoration: none;
         }
       }
+
       .date-message {
         font-size: 14px;
         color: #777;
       }
+
       // &:hover,
       // &:focus {
       //   .action-message-chat {
@@ -286,12 +380,13 @@ IMPORT AMOS-LAYOUT VARIABLES
       // padding: 0 15px 15px 15px;
       bottom: 0;
       border-top: 1px solid #eaeaea;
+
       .write-comment-chat {
         // border: 1px solid #ccc;
         // border-radius: 6px;
         box-shadow: 0 0 5px rgba(0, 0, 0, .1);
         padding: 15px;
-        background-color: #EFF2F3;
+        background-color: #FFF;
 
         #contribute-area {
           width: 100%;
@@ -300,9 +395,14 @@ IMPORT AMOS-LAYOUT VARIABLES
           resize: vertical;
           border-radius: 6px;
         }
+        .action-chat-footer {
+          
+        }
       }
+
       .redactor {
         display: flex;
+
         .text-area {
           width: 100%;
         }
@@ -313,9 +413,31 @@ IMPORT AMOS-LAYOUT VARIABLES
       background-color: #fdf5d2 !important;
     }
   }
+
   #comments-loader {
     img {
       max-width: 200px;
+    }
+  }
+}
+.answer_teams {
+  a.link-readmore {
+    color: @color-ms-teams;
+    margin-left: 5px;
+    // text-transform: uppercase;
+    text-decoration: none !important;
+    font-size: 14px;
+    flex-wrap: nowrap;
+    span {
+      margin-left: 3px;
+    }
+  }
+}
+
+#widgetGraphicVideo {
+  iframe {
+    @media (max-width:575px){
+      height: 250px;
     }
   }
 }

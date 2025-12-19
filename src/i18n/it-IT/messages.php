@@ -90,4 +90,6 @@ return [
     '#subtitleBoxPartecipaLogin' => 'Accedi a {platformName}',
     '#chat_message_subject' => 'Nuovo messaggio chat community {communityName}',
     '#chat_message_mail_content' => '<br>E\' stato inviato un nuovo messaggio nella chat della community <a href="{communityUrl}" title="Vai alla community" target="_blank">{communityName}</a>',
+    '#comment_blacklist_modal_message' => 'Impossibile procedere con l\'invio. Il Suo messaggio sembra contenere dei termini non appropriati.<br>Contattare l\'assistenza per eventuali segnalazioni:',
+    '#blacklist_import_allowed_extensions' => 'Estensioni consentite: {extensions}',
 ];

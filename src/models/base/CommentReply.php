@@ -12,6 +12,7 @@
 namespace open20\amos\comments\models\base;
 
 use open20\amos\comments\AmosComments;
+use open20\amos\core\validators\StringHtmlValidator;
 use open20\amos\notificationmanager\record\NotifyRecord;
 use yii\helpers\ArrayHelper;
 
@@ -22,6 +23,7 @@ use yii\helpers\ArrayHelper;
  * @property integer $id
  * @property string $comment_reply_text
  * @property integer $comment_id
+ * @property string $status
  * @property string $created_at
  * @property string $updated_at
  * @property string $deleted_at
@@ -50,7 +52,8 @@ class CommentReply extends NotifyRecord
     {
         return [
             [['comment_reply_text', 'comment_id'], 'required'],
-            [['comment_reply_text'], 'string'],
+            [['comment_reply_text'], StringHtmlValidator::className()],
+            [['comment_reply_text', 'status'], 'string'],
             [['created_at', 'updated_at', 'deleted_at'], 'safe'],
             [['comment_id', 'created_by', 'updated_by', 'deleted_by'], 'integer']
         ];
@@ -65,6 +68,7 @@ class CommentReply extends NotifyRecord
             'id' => AmosComments::t('amoscomments', 'ID'),
             'comment_reply_text' => AmosComments::t('amoscomments', 'Comment Reply Text'),
             'comment_id' => AmosComments::t('amoscomments', 'Comment ID'),
+            'status' => AmosComments::t('amoscomments', 'Status'),
             'created_at' => AmosComments::t('amoscomments', 'Created At'),
             'updated_at' => AmosComments::t('amoscomments', 'Updated At'),
             'deleted_at' => AmosComments::t('amoscomments', 'Deleted At'),
@@ -72,6 +76,41 @@ class CommentReply extends NotifyRecord
             'updated_by' => AmosComments::t('amoscomments', 'Updated By'),
             'deleted_by' => AmosComments::t('amoscomments', 'Deleted By')
         ]);
+    }
+
+
+    /**
+     * @return string
+     */
+    public function getToValidateStatus(): string
+    {
+        return \open20\amos\comments\models\Comment::STATUS_TOVALIDATE;
+    }
+
+    /**
+     * @param $status
+     * @return int
+     */
+    public function getStatusLastUpdateUser($status): int
+    {
+        return $this->updated_by;
+    }
+
+    /**
+     * @param $status
+     * @return string
+     */
+    public function getStatusLastUpdateTime($status): string
+    {
+        return $this->updated_at;
+    }
+
+    /**
+     * @return string
+     */
+    public function getTitle(): string
+    {
+        return $this->comment_reply_text;
     }
     
     /**

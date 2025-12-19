@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Aria S.p.A.
  * OPEN 2.0
@@ -10,8 +11,11 @@
 
 namespace open20\amos\comments;
 
+use open20\amos\comments\base\PartecipantsNotification;
 use open20\amos\comments\components\CommentComponent;
 use open20\amos\comments\models\Comment;
+use open20\amos\comments\models\CommentDashboard;
+use open20\amos\comments\models\CommentModeration;
 use open20\amos\comments\models\CommentReply;
 use open20\amos\core\components\AmosView;
 use open20\amos\core\module\AmosModule;
@@ -19,6 +23,7 @@ use open20\amos\core\module\ModuleInterface;
 use open20\amos\core\record\Record;
 use yii\base\BootstrapInterface;
 use yii\base\Event;
+use yii\base\InvalidConfigException;
 use yii\db\ActiveRecord;
 use yii\helpers\VarDumper;
 
@@ -26,8 +31,8 @@ use yii\helpers\VarDumper;
  * Class AmosComments
  * @package open20\amos\comments
  */
-class AmosComments extends AmosModule implements ModuleInterface, BootstrapInterface
-{
+class AmosComments extends AmosModule implements ModuleInterface, BootstrapInterface {
+
     public static $CONFIG_FOLDER = 'config';
 
     /**
@@ -41,22 +46,28 @@ class AmosComments extends AmosModule implements ModuleInterface, BootstrapInter
      * @inheritdoc
      */
     public $controllerNamespace = 'open20\amos\comments\controllers';
-    public $newFileMode         = 0666;
-    public $name                = 'Comments';
-    public $layoutInverted      = false;
+    public $newFileMode = 0666;
+    public $name = 'Comments';
+    public $layoutInverted = false;
 
     /**
      * @var array $modelsEnabled
      */
-    public $modelsEnabled           = [];
-    public $modelsConfiguration     = [];
-    public $maxCommentAttachments   = 5;
+    public $modelsEnabled = [];
+    public $modelsCustomMail = [];
+    public $modelsConfiguration = [];
+    public $maxCommentAttachments = 5;
     public $enableMailsNotification = true;
 
     /**
      * @var bool $enableUserSendMailCheckbox If true enable the checkbox in the comments forms with the user can select if send or not the notify mail.
      */
     public $enableUserSendMailCheckbox = true;
+
+    /**
+     * @var bool $socialShare If true enable share on social of the comments.
+     */
+    public $socialShare = true;
 
     /**
      * This is the html used to render the subject of the e-mail. In the view is available the variable $profile
@@ -123,7 +134,7 @@ class AmosComments extends AmosModule implements ModuleInterface, BootstrapInter
      * @var boolean $enableCommentOnlyWithScope
      */
     public $enableCommentOnlyWithScope = false;
-    public $disableAutoDisplay         = ['amos\planner\models\PlanWork'];
+    public $disableAutoDisplay = ['amos\planner\models\PlanWork'];
 
     /**
      * If a true notify the context model (DiscussioniTopic) if is created a comment
@@ -141,20 +152,24 @@ class AmosComments extends AmosModule implements ModuleInterface, BootstrapInter
      *
      * @var type
      */
-    public $disablePagination     = false;
+    public $disablePagination = false;
+
+    /**
+     * Number of comments showed per page
+     * @var int $paginationPageSize
+     */
+    public $paginationPageSize = 5;
 
     /**
      *
      * @var bool $enableModerator
      */
-    public $enableModerator     = false;
+    public $enableModerator = false;
 
     /**
      * @var bool
      */
     public $enableAttachmentInComment = true;
-
-
     private static $registerEvent = false;
 
     /**
@@ -162,6 +177,11 @@ class AmosComments extends AmosModule implements ModuleInterface, BootstrapInter
      * @var type
      */
     public $enableCanDoIt = true;
+
+    /**
+     * @var bool *
+     */
+    public $enableCommentInEvidence = false;
 
     /**
      *  Example:
@@ -176,7 +196,21 @@ class AmosComments extends AmosModule implements ModuleInterface, BootstrapInter
     public $bellNotificationEnabledClasses = [
         'open20\amos\community\models\Community'
     ];
-    
+
+    /**
+     * If notification bell is enabled by $bellNotificationEnabledClasses configuration,
+     * deactivate the bell icon in comments section (default) and activate it in the view content.
+     * @var bool $showBellIconInContentView
+     */
+    public $showBellIconInContentView = false;
+
+    /**
+     * If user has the option to enable/disable notifications for comments, when a comment is created
+     * and the notification was disabled, re-enable the notification for the user.
+     * @var bool $forceEnableCommentNotificationUserOnCreate
+     */
+    public $forceEnableCommentNotificationUserOnCreate = false;
+
     /**
      * @var string List of the allowed extensions for the upload of files.
      */
@@ -195,82 +229,118 @@ class AmosComments extends AmosModule implements ModuleInterface, BootstrapInter
     public $disableBannerCtaForGuest = false;
 
     /**
+     * Enable scan before sending a comment, if the comment contains a word in the blacklist,
+     * the comment is not saved and shows an error message to the user.
+     * It's applied for general comments and chat comments.
+     * @var bool $enableBlacklistWordsFilter
+     */
+    public $enableBlacklistWordsFilter = false;
+
+    /**
+     * Enable blacklist for the models in the list.
+     * @var string[] $blacklistModelsEnabled
+     */
+    public $blacklistModelsEnabled = [
+        'open20\amos\news\models\News',
+        'open20\amos\discussioni\models\DiscussioniTopic',
+    ];
+
+    /**
+     * Enable comments moderation.
+     * @var bool $enableModeration
+     */
+    public $enableModeration = false;
+
+    /**
+     * Enable comments moderation for the models in the list.
+     * @var string[] $moderationModelsEnabled
+     */
+    public $moderationModelsEnabled = [
+        'open20\amos\news\models\News',
+        'open20\amos\discussioni\models\DiscussioniTopic',
+    ];
+
+    /**
+     * If set to true, it enables the choice of category when inserting the comment,
+     * managed only in the case of cms => true in the comments widget
+     * @var type
+     */
+    public $enableCategory = false;
+    public $typeCategory = [];
+    public $typeCategoryBadge = [
+        1 => 'secondary',
+        2 => 'warning',
+    ];
+
+    /**
      * @return string
      */
-    public static function getModuleName()
-    {
+    public static function getModuleName() {
         return 'comments';
     }
 
     /**
      * @inheritdoc
      */
-    public function init()
-    {
+    public function init() {
         parent::init();
-        \Yii::setAlias('@open20/amos/'.static::getModuleName().'/controllers', __DIR__.'/controllers/');
+        \Yii::setAlias('@open20/amos/' . static::getModuleName() . '/controllers', __DIR__ . '/controllers/');
         // custom initialization code goes here
-        \Yii::configure($this, require(__DIR__.DIRECTORY_SEPARATOR.'config'.DIRECTORY_SEPARATOR.'config.php'));
+        \Yii::configure($this, require(__DIR__ . DIRECTORY_SEPARATOR . 'config' . DIRECTORY_SEPARATOR . 'config.php'));
     }
 
     /**
      * @inheritdoc
      */
-    public function getWidgetGraphics()
-    {
+    public function getWidgetGraphics() {
         return NULL;
     }
 
     /**
      * @inheritdoc
      */
-    public function getWidgetIcons()
-    {
+    public function getWidgetIcons() {
         return [];
     }
 
     /**
      * @inheritdoc
      */
-    protected function getDefaultModels()
-    {
+    protected function getDefaultModels() {
         return [];
     }
 
     /**
      * @inheritdoc
      */
-    public function bootstrap($app)
-    {
+    public function bootstrap($app) {
         if (self::$registerEvent == false) {
             self::$registerEvent = true;
             Event::on(AmosView::className(), AmosView::AFTER_RENDER_CONTENT, [new CommentComponent(), 'showComments']);
         }
 
-        if (!empty($this->bellNotificationEnabledClasses) && is_array($this->bellNotificationEnabledClasses)){
-            foreach ($this->bellNotificationEnabledClasses as $modelClassName){
+        if (!empty($this->bellNotificationEnabledClasses) && is_array($this->bellNotificationEnabledClasses)) {
+            foreach ($this->bellNotificationEnabledClasses as $modelClassName) {
                 Event::on($modelClassName, Record::EVENT_AFTER_INSERT, [new CommentComponent(), 'addCreatorEnableNotificationUser']);
             }
         }
-
     }
 
     /**
      * @param $model
      */
-    public function countComments($model)
-    {
+    public function countComments($model) {
         $query = Comment::find()
-            ->joinWith('commentReplies', true, 'LEFT JOIN')
-            ->andWhere(['context' => $model->className(), 'context_id' => $model->id])
-            ->groupBy('comment.id');
+                ->joinWith('commentReplies', true, 'LEFT JOIN')
+                ->andWhere(['context' => $model->className(), 'context_id' => $model->id])
+                ->groupBy('comment.id');
 
         /** @var \open20\amos\comments\models\Comment $lastComment */
         $countComment = $query->count();
-        $query        = Comment::find()
-            ->joinWith('commentReplies', true, 'LEFT JOIN')
-            ->andWhere(['context' => $model->className(), 'context_id' => $model->id])
-            ->andWhere(['is not', CommentReply::tableName().'.id', null]);
+        $query = Comment::find()
+                ->joinWith('commentReplies', true, 'LEFT JOIN')
+                ->andWhere(['context' => $model->className(), 'context_id' => $model->id])
+                ->andWhere(['is not', CommentReply::tableName() . '.id', null]);
         $countComment += $query->count();
         return $countComment;
     }
@@ -282,18 +352,117 @@ class AmosComments extends AmosModule implements ModuleInterface, BootstrapInter
      * @return bool|mixed
      */
     public function modelCanDoIt($classname, $action) {
-        if(empty($classname) || empty($action)) {
+        if (empty($classname) || empty($action)) {
             return false;
         }
 
-        if(array_key_exists($classname, $this->modelsConfiguration)) {
+        if (array_key_exists($classname, $this->modelsConfiguration)) {
             $config = $this->modelsConfiguration[$classname];
 
-            if(array_key_exists($action, $config)) {
+            if (array_key_exists($action, $config)) {
                 return $config[$action];
             }
         }
 
         return true;
+    }
+
+    /**
+     * Checks if moderation is enabled for the model.
+     * @param $model
+     * @return bool
+     * @throws InvalidConfigException
+     */
+    public function checkModerationStatus($model): bool {
+        if ($this->enableModeration && in_array(get_class($model), $this->moderationModelsEnabled)) {
+            $isCommunityContent = false;
+            if (method_exists($model, 'isNetworkContent')) {
+                $isCommunityContent = $model->isNetworkContent('community');
+            }
+            $commentDashboard = CommentDashboard::find()->one();
+            if (!$isCommunityContent) {
+                // Platform contents
+                if ($commentDashboard && $commentDashboard->moderation_platform) {
+                    return true;
+                }
+            } else {
+                // Community contents
+                if ($commentDashboard && $commentDashboard->moderation_communities) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * @param $modelClassname
+     * @param $contentId
+     * @param $value
+     * @return void
+     */
+    public function saveCommentModeration($modelClassname, $contentId, $value = false) {
+        $commentModeration = CommentModeration::findOne(['classname' => $modelClassname, 'content_id' => $contentId]);
+
+        if (!$commentModeration) {
+            $commentModeration = new CommentModeration();
+            if(is_null($value)){
+                $value = false;
+            }
+            $commentModeration->classname = $modelClassname;
+            $commentModeration->content_id = $contentId;
+            $commentModeration->moderation = $value;
+            $commentModeration->save(false);
+        } else {
+            $commentModeration->moderation = $value;
+            $commentModeration->save(false);
+
+            if ($value == false) {
+                // Publish all comments of the content
+                $comments = Comment::find()->andWhere([
+                            'context' => $modelClassname,
+                            'context_id' => $contentId,
+                            'status' => Comment::STATUS_TOVALIDATE
+                        ])->all();
+                $partecipantsnotify = new PartecipantsNotification();
+                foreach ($comments as $comment) {
+                    $comment->status = Comment::STATUS_PUBLISHED;
+                    if ($comment->save(false)) {
+                        $partecipantsnotify->partecipantAlert($comment);
+                    }
+                    // Publish all replies of the content
+                    $commentReplies = CommentReply::find()->andWhere([
+                                'comment_id' => $comment->id,
+                                'status' => Comment::STATUS_TOVALIDATE
+                            ])->all();
+                    foreach ($commentReplies as $commentReply) {
+                        $commentReply->status = Comment::STATUS_PUBLISHED;
+                        if ($commentReply->save(false)) {
+                            $partecipantsnotify->partecipantAlert($commentReply);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Return the moderation value of the context model
+     * @param string $modelClassname
+     * @param integer $modelId
+     * @return bool
+     */
+    public function getContextModerationValue(string $modelClassname, int $modelId): bool {
+        $moderationValue = false;
+
+        $commentModeration = CommentModeration::findOne([
+                    'classname' => $modelClassname,
+                    'content_id' => $modelId
+        ]);
+        if ($commentModeration && $commentModeration->moderation) {
+            $moderationValue = true;
+        }
+
+        return $moderationValue;
     }
 }

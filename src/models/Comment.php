@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Aria S.p.A.
  * OPEN 2.0
@@ -13,9 +14,11 @@ namespace open20\amos\comments\models;
 use open20\amos\attachments\behaviors\FileBehavior;
 use open20\amos\attachments\models\File;
 use open20\amos\comments\AmosComments;
+use open20\amos\community\models\CommunityUserMm;
 use open20\amos\core\models\ModelsClassname;
 use yii\helpers\ArrayHelper;
 use open20\amos\notificationmanager\behaviors\NotifyBehavior;
+use yii\helpers\VarDumper;
 use yii\web\Application;
 
 /**
@@ -29,6 +32,13 @@ use yii\web\Application;
  */
 class Comment extends \open20\amos\comments\models\base\Comment
 {
+
+    // WORKFLOW NAME
+    const WORKFLOW = 'CommentWorkflow';
+    // WORKFLOW STATUSES
+    const STATUS_TOVALIDATE = 'CommentWorkflow/TOVALIDATE';
+    const STATUS_PUBLISHED = 'CommentWorkflow/PUBLISHED';
+    const STATUS_REJECTED = 'CommentWorkflow/REJECTED';
     const VIEW_TYPE_POSITION = 'comment';
 
     public $publicatedByLabel;
@@ -42,12 +52,14 @@ class Comment extends \open20\amos\comments\models\base\Comment
      * @var File[] $commentAttachmentsForItemView
      */
     public $commentAttachmentsForItemView;
+    static $typeCategory;
 
     /**
      */
     public function init()
     {
         parent::init();
+
         $this->publicatedByLabel = AmosComments::t('amoscomments', 'Pubblicato da');
     }
 
@@ -57,7 +69,7 @@ class Comment extends \open20\amos\comments\models\base\Comment
     public function behaviors()
     {
         return ArrayHelper::merge(parent::behaviors(),
-                [
+            [
                 'fileBehavior' => [
                     'class' => FileBehavior::className()
                 ],
@@ -65,7 +77,7 @@ class Comment extends \open20\amos\comments\models\base\Comment
                     'class' => NotifyBehavior::className(),
                     'conditions' => [],
                 ],
-        ]);
+            ]);
     }
 
     /**
@@ -80,13 +92,13 @@ class Comment extends \open20\amos\comments\models\base\Comment
         $commentsModule = \Yii::$app->getModule(AmosComments::getModuleName());
         if (isset($commentsModule)) {
             $maxCommentAttachments = $commentsModule->maxCommentAttachments;
-            if($commentsModule->hasProperty('mimeTypes'))
+            if ($commentsModule->hasProperty('mimeTypes'))
                 $mimeTypes = $commentsModule->mimeTypes;
         }
         return ArrayHelper::merge(parent::rules(),
-                [
-                [['commentAttachments'], 'file', 'maxFiles' => $maxCommentAttachments, 'mimeTypes'=>$mimeTypes],
-        ]);
+            [
+                [['commentAttachments'], 'file', 'maxFiles' => $maxCommentAttachments, 'mimeTypes' => $mimeTypes],
+            ]);
     }
 
     /**
@@ -95,9 +107,9 @@ class Comment extends \open20\amos\comments\models\base\Comment
     public function attributeLabels()
     {
         return ArrayHelper::merge(parent::attributeLabels(),
-                [
+            [
                 'commentAttachments' => AmosComments::t('amoscomments', '#COMMENT_ATTACHMENTS'),
-        ]);
+            ]);
     }
 
     /**
@@ -165,12 +177,12 @@ class Comment extends \open20\amos\comments\models\base\Comment
             /** @var \open20\amos\core\record\Record $contextModelClassName */
             $contextModelClassName = $this->context;
             /** @var \open20\amos\core\record\Record $contextModel */
-            $contextModel          = $contextModelClassName::findOne($this->context_id);
+            $contextModel = $contextModelClassName::findOne($this->context_id);
             if ($contextModel && get_class($contextModel) == 'open20\amos\discussioni\models\DiscussioniTopic') {
-                $notifyComment             = new \open20\amos\notificationmanager\models\Notification();
+                $notifyComment = new \open20\amos\notificationmanager\models\Notification();
                 $notifyComment->content_id = $this->id;
-                $notifyComment->user_id    = $this->created_by;
-                $notifyComment->channels   = \open20\amos\notificationmanager\models\NotificationChannels::CHANNEL_MAIL;
+                $notifyComment->user_id = $this->created_by;
+                $notifyComment->channels = \open20\amos\notificationmanager\models\NotificationChannels::CHANNEL_MAIL;
                 $notifyComment->class_name = get_class($this);
                 $notifyComment->save(false);
 
@@ -185,14 +197,13 @@ class Comment extends \open20\amos\comments\models\base\Comment
                     ->andWhere(['IS NOT', 'notification.models_classname_id', null])
                     ->one();
 
-
                 if (empty($notify)) {
-                    $notify          = new \open20\amos\notificationmanager\models\Notification();
+                    $notify = new \open20\amos\notificationmanager\models\Notification();
                     $notify->user_id = $contextModel->created_by;
 
                     //create notification for a network
                     $notify->content_id = $contextModel->id;
-                    $notify->channels   = \open20\amos\notificationmanager\models\NotificationChannels::CHANNEL_MAIL;
+                    $notify->channels = \open20\amos\notificationmanager\models\NotificationChannels::CHANNEL_MAIL;
                     $notify->class_name = $contextModelClassName;
                 }
 
@@ -208,10 +219,10 @@ class Comment extends \open20\amos\comments\models\base\Comment
                             $modelsClassname = ModelsClassname::find()->andWhere(['module' => $exploded[0]])->one();
                             if ($modelsClassname) {
                                 $notify->models_classname_id = $modelsClassname->id;
-                                $notify->record_id           = $exploded[1];
+                                $notify->record_id = $exploded[1];
 
                                 $notifyComment->models_classname_id = $modelsClassname->id;
-                                $notifyComment->record_id           = $exploded[1];
+                                $notifyComment->record_id = $exploded[1];
                             }
                         }
                     }
@@ -227,7 +238,7 @@ class Comment extends \open20\amos\comments\models\base\Comment
     }
 
     /**
-     * 
+     *
      * @param object $context
      * @param string $method
      * @return type
@@ -249,5 +260,57 @@ class Comment extends \open20\amos\comments\models\base\Comment
         } else {
             return null;
         }
+    }
+
+    public static function getTypeCategory()
+    {
+        if (empty(self::$typeCategory)) {
+            $types = AmosComments::instance()->typeCategory;
+            foreach ($types as $k => $type) {
+                self::$typeCategory[$k] = \Yii::t('amoscomments', $type);
+            }
+        }
+        return self::$typeCategory;
+    }
+
+    public function createCommentInMsTeams()
+    {
+
+        $community = \open20\amos\community\models\Community::findOne($this->context_id);
+        $enableMsTeams = $community->isEnableMsGraph();
+        $parent = \open20\amos\community\models\Community::getCommunityRoot($community);
+
+        if($enableMsTeams && $this->canSendOnTeams()) {
+            $msBuilder = new \open20\amos\community\models\clients\MsGraphBuilder();
+            $msMessage = $msBuilder->postMessageToChannel($parent->msgraph_team_id, $community->msgraph_channel_id, $this->comment_text);
+
+            if(!empty($msMessage->id)){
+                $this->msgraph_channel_message_id = $msMessage->id;
+                $this->msgraph_channel_message_weburl = $msMessage->webUrl;
+                $this->save(false);
+            }
+            return $msMessage;
+        }
+        return null;
+    }
+
+    /**
+     * @return bool
+     * @throws \yii\base\InvalidConfigException
+     */
+    public function canSendOnTeams(){
+        $tokenTeams = \open20\amos\community\models\CommunityMsgraphTokens::find()->andWhere(['user_id' => \Yii::$app->user->id])->one();
+        $member = \open20\amos\community\models\CommunityUserMm::find()->andWhere([
+            'user_id' => \Yii::$app->user->id, 'community_id' => $this->context_id,
+            'status' => CommunityUserMm::STATUS_ACTIVE
+        ])->one();
+
+        if ($tokenTeams->msgraph_user_id) {
+            $isAccountTeamsConnected = true;
+        }
+        if ($member && $member->msgraph_membership_id) {
+            $isTeamMember = true;
+        }
+        return $isTeamMember&& $isAccountTeamsConnected;
     }
 }

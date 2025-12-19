@@ -65,38 +65,58 @@ Comments.saveComment = function(context_id, context, csrfKey, csrfValue) {
             formData.append(csrfKey, csrfValue);
         }
 
+        // Check if the comment contains words from the blacklist
         $.ajax({
-            url: '/comments/comment/create-ajax?chat=true',
-            contentType: false,
-            processData: false,
-            data: formData,
+            url: '/comments/comment-blacklist/scan-comment',
+            data: {
+                commentText: comment_text,
+                isChat: true
+            },
             type: 'post',
             dataType: 'json',
-            beforeSend: function() {
-                Comments.beforeSendAjax();
-            },
-            complete: function(jjqXHR, textStatus) {
-                Comments.completeAjax();
-            },
-            success: function(response) {
-                if (response.error) {
-                    alert(response.error.msg);
-                } else {
-                    var urlRedirect = $('#url-redirect').val();
-                    if(urlRedirect != '' && urlRedirect != undefined){
-                        window.location.href = urlRedirect;
+            success: function (response) {
+                if (response.containsBlacklistedWords) {
+                    $('#scan-comment-modal-id').find('.modal-body').html(response.modalBody);
+                    if (!$('#scan-comment-modal-id .modal-footer').length) {
+                        $(response.modalFooter).insertAfter('#scan-comment-modal-id .modal-body');
                     }
-                    Comments.insertNewMessage(response);
-                    Comments.updateScroll();
+                    $('#scan-comment-modal-id').modal('show');
+                } else {
+                    $.ajax({
+                        url: '/comments/comment/create-ajax?chat=true',
+                        contentType: false,
+                        processData: false,
+                        data: formData,
+                        type: 'post',
+                        dataType: 'json',
+                        beforeSend: function() {
+                            Comments.beforeSendAjax();
+                        },
+                        complete: function(jjqXHR, textStatus) {
+                            Comments.completeAjax();
+                        },
+                        success: function(response) {
+                            if (response.error) {
+                                alert(response.error.msg);
+                            } else {
+                                var urlRedirect = $('#url-redirect').val();
+                                if(urlRedirect != '' && urlRedirect != undefined){
+                                    window.location.href = urlRedirect;
+                                }
+                                Comments.insertNewMessage(response);
+                                Comments.updateScroll();
 
-                    // Salvo l'ultimo messaggio che vedo in chat
-                    Comments.lastMessageId = $('.content-message-chat').last().prop('id').split('-')[1];
-                    comment_textarea.val('');
+                                // Salvo l'ultimo messaggio che vedo in chat
+                                Comments.lastMessageId = $('.content-message-chat').last().prop('id').split('-')[1];
+                                comment_textarea.val('');
+                            }
+                        },
+                        error: function(response) {
+                            console.log(response);
+                            $('#ajax-error-comment-modal-id').modal('show');
+                        }
+                    });
                 }
-            },
-            error: function(response) {
-                console.log(response);
-                $('#ajax-error-comment-modal-id').modal('show');
             }
         });
     } else {
@@ -113,12 +133,12 @@ Comments.toggleNotification = function(partialUrl) {
         contentType: false,
         type: 'post',
         success: function(response) {
-            if(valueEnabled){
+            /*if(valueEnabled){
                 $('#iconNotification').html('<span class="am am-notifications-add m-r-5" style="font-size: 24px;"></span>');
             }
             else{
                 $('#iconNotification').html('<svg class="m-r-5" style="width:24px;height:24px" viewBox="0 0 24 24"><path fill="currentColor" d="M17.5 13A4.5 4.5 0 0 0 13 17.5A4.5 4.5 0 0 0 17.5 22A4.5 4.5 0 0 0 22 17.5A4.5 4.5 0 0 0 17.5 13M17.5 14.5A3 3 0 0 1 20.5 17.5A3 3 0 0 1 20.08 19L16 14.92A3 3 0 0 1 17.5 14.5M14.92 16L19 20.08A3 3 0 0 1 17.5 20.5A3 3 0 0 1 14.5 17.5A3 3 0 0 1 14.92 16M12 2C10.9 2 10 2.9 10 4C10 4.1 10 4.19 10 4.29C7.12 5.14 5 7.82 5 11V17L3 19V20H11.5A6.5 6.5 0 0 1 11 17.5A6.5 6.5 0 0 1 17.5 11A6.5 6.5 0 0 1 19 11.18V11C19 7.82 16.88 5.14 14 4.29C14 4.19 14 4.1 14 4C14 2.9 13.11 2 12 2M10 21C10 22.11 10.9 23 12 23C12.5 23 12.97 22.81 13.33 22.5A6.5 6.5 0 0 1 12.03 21Z"/></svg>');
-            }
+            }*/
         }
     });
 };
@@ -146,20 +166,40 @@ Comments.updateComment = function() {
     let comment_text = $('#contribute-area').val();
     formData.append('Comment[comment_text]', comment_text);
 
+    // Check if the comment contains words from the blacklist
     $.ajax({
-        url: '/comments/comment/update?id=' + Comments.idUpdateComment,
-        contentType: false,
-        processData: false,
-        data: formData,
+        url: '/comments/comment-blacklist/scan-comment',
+        data: {
+            commentText: comment_text,
+            isChat: true
+        },
         type: 'post',
         dataType: 'json',
-        beforeSend: function() {
-            $('#contribute-area').val('');
-            Comments.saveButton();
-            Comments.disableSendButton();
-            comment_text = Comments.at2Strong(comment_text);
-            comment_text = Comments.search4Links(comment_text);
-            $('#comment-' + Comments.idUpdateComment + ' p[class*="answer_text"]').html(comment_text);
+        success: function (response) {
+            if (response.containsBlacklistedWords) {
+                $('#scan-comment-modal-id').find('.modal-body').html(response.modalBody);
+                if (!$('#scan-comment-modal-id .modal-footer').length) {
+                    $(response.modalFooter).insertAfter('#scan-comment-modal-id .modal-body');
+                }
+                $('#scan-comment-modal-id').modal('show');
+            } else {
+                $.ajax({
+                    url: '/comments/comment/update?id=' + Comments.idUpdateComment,
+                    contentType: false,
+                    processData: false,
+                    data: formData,
+                    type: 'post',
+                    dataType: 'json',
+                    beforeSend: function () {
+                        $('#contribute-area').val('');
+                        Comments.saveButton();
+                        Comments.disableSendButton();
+                        comment_text = Comments.at2Strong(comment_text);
+                        comment_text = Comments.search4Links(comment_text);
+                        $('#comment-' + Comments.idUpdateComment + ' [class*="answer_text"]').html(comment_text);
+                    }
+                });
+            }
         }
     });
 };
@@ -223,15 +263,16 @@ Comments.autoupdate = function(){
         success: function(response) {
             if(response[0].length > 0) {
                 for (let i = 0; i < response[0].length; i++) {
-                    Comments.insertNewMessage(response[0][i]);
-                }
+                    if($('#comment-'+response[0][i]['id']).length === 0){
+                        Comments.insertNewMessage(response[0][i]);
+                    }                }
                 Comments.updateScroll();
                 Comments.lastMessageId = response[0][response[0].length - 1]['id'];
             }
 
             if(response[1].length > 0){
                 for (let i = 0; i < response[1].length; i++) {
-                    $('#comment-' + response[1][i]['id'] + ' p[class*="answer_text"]').text(response[1][i]['message']);
+                    $('#comment-' + response[1][i]['id'] + ' [class*="answer_text"]').text(response[1][i]['message']);
                 }
             }
             if(response[2].length > 0){
@@ -258,8 +299,14 @@ Comments.updateTimeRequest = function(){
 
 // Inserisce un nuovo messaggio in chat
 Comments.insertNewMessage = function(response){
-    let text = Comments.at2Strong(response['message']);
-    text = Comments.search4Links(text);
+    let channel_message_id = response['msgraph_channel_message_id'];
+    let text = '';
+    if(channel_message_id && channel_message_id.length > 0){
+        text = response['message']+ response['messageAlert'];
+    } else {
+        text = Comments.at2Strong(response['message']);
+        text = Comments.search4Links(text);
+    }
     let newMessage = $(Comments.template).appendTo('.comment-chat-content');
     Comments.totalComments++;
 
@@ -275,6 +322,11 @@ Comments.insertNewMessage = function(response){
     newMessage.find('.date-message').text(response['date']);
 
     newMessage.find('.answer_text').html(text);
+
+    if(channel_message_id && channel_message_id.length > 0){
+        newMessage.find('.mdi-microsoft-teams').show();
+        newMessage.find('.answer_text').addClass('answer_teams').removeClass('answer_text');
+    }
 
     newMessage.find('.deleteComment').attr('id', 'deleteComment-' + response['id']);
     newMessage.find('.updateComment').attr('id', 'updateComment-' + response['id']);
