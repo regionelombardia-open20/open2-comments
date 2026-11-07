@@ -1,5 +1,6 @@
 {
     "name": "open20/amos-comments",
+    "license": "GPL-3.0-or-later",
     "description": "Comments for contents - plugin",
     "keywords": ["amos", "yii2", "comments"],
     "type": "plugin",
